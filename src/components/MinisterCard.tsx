@@ -5,9 +5,13 @@ import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 
 interface MinisterCardProps {
   minister: Minister;
+  onRemove: (id: string) => void;
 }
 
-export default function MinisterCard({ minister }: MinisterCardProps) {
+export default function MinisterCard({
+  minister,
+  onRemove,
+}: MinisterCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: minister.id,
   });
@@ -19,15 +23,20 @@ export default function MinisterCard({ minister }: MinisterCardProps) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="minister-card"
-    >
-      <h4 className="minister-name">{minister.name}</h4>
-      <p className="minister-gender">{minister.gender}</p>
+    <div ref={setNodeRef} style={style} className="minister-card">
+      <div {...attributes} {...listeners} className="drag-handle">
+        <h4 className="minister-name">{minister.name}</h4>
+      </div>
+      <button
+        onClick={(e) => {
+          console.log("Remove button clicked for minister:", minister.id);
+          e.stopPropagation();
+          onRemove(minister.id);
+        }}
+        className="remove-button"
+      >
+        Remove
+      </button>
     </div>
   );
 }

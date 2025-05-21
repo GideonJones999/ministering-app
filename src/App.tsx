@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { DndContext, DragEndEvent, useDroppable } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  useDroppable,
+} from "@dnd-kit/core";
 import {
   ministers as allMinisters,
   members,
@@ -14,33 +19,65 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
+// Change Rows into Columns
+// Organize Lists Alphabetically
 // Add Distrcits
-// Make Members to Right of Ministers
-// Import names from list to Ministers list and Members List
-// Imoport Tutorial
-// Add a minister or member
+// Import Tutorial
 // Edit a minister or member
 // Priority Tag to certain Members (Binary)
-// Delete a member or minister
 // Export the list to a CSV
 
 function App() {
   const [companionships, setCompanionships] = useState<Companionship[]>([]);
-  const [newMinister, setNewMinister] = useState({ name: "", gender: "male" });
-  const [newMember, setNewMember] = useState({ name: "", isFamily: false });
+  const [newMinister, setNewMinister] = useState({ name: "" });
+  const [newMember, setNewMember] = useState({ name: "" });
   const [unassignedMinisters, setUnassignedMinisters] =
     useState<Minister[]>(allMinisters);
   const [unassignedMembers, setUnassignedMembers] = useState<Member[]>(members);
   const [showAddMinisterForm, setShowAddMinisterForm] = useState(false);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+  const [bulkInput, setBulkInput] = useState(""); // For bulk input
+  const [showBulkAddForm, setShowBulkAddForm] = useState(false); // Toggle bulk add form
+  const [activeDragStartZoneId, setActiveDragStartZoneId] = useState<
+    string | null
+  >(null);
 
-  const isMinisterAssigned = (ministerId: string) =>
-    companionships.some((c) => c.ministers.some((mi) => mi.id === ministerId));
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+
+    // Determine which zone the item started in
+    const isMinister = unassignedMinisters.some((m) => m.id === active.id);
+    const isMember = unassignedMembers.some((m) => m.id === active.id);
+
+    if (isMinister) {
+      setActiveDragStartZoneId("unassigned-ministers");
+    } else if (isMember) {
+      setActiveDragStartZoneId("unassigned-members");
+    } else {
+      // Look for the companionship it came from
+      const fromComp = companionships.find(
+        (c) =>
+          c.ministers.some((m) => m.id === active.id) ||
+          c.members?.some((m) => m.id === active.id)
+      );
+      if (fromComp) {
+        const minister = fromComp.ministers.find((m) => m.id === active.id);
+        const zoneId = minister
+          ? `companionship-${fromComp.id}`
+          : `companionship-${fromComp.id}-members`;
+        setActiveDragStartZoneId(zoneId);
+      }
+    }
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
-
+    if (!over || over.id === activeDragStartZoneId) {
+      console.log("Drag ended without a valid drop or no real drag happened.");
+      setActiveDragStartZoneId(null);
+      return;
+    }
+    console.log("Drag ended:", { active, over });
     const minister = unassignedMinisters.find((m) => m.id === active.id);
     const member = unassignedMembers.find((m) => m.id === active.id);
     if (!minister && !member) return;
@@ -53,15 +90,15 @@ function App() {
     }));
 
     // — 2. Dropped back on Unassigned panel —
-    if (over.id === "unassigned-ministers") {
-      setUnassignedMinisters((prev) => [...prev, minister!]);
+    if (over.id === "unassigned-ministers" && minister) {
+      setUnassignedMinisters((prev) => [...prev, minister]);
       updated = updated.filter((c) => c.ministers.length > 0);
       setCompanionships(updated);
       return;
     }
 
-    if (over.id === "unassigned-members") {
-      setUnassignedMembers((prev) => [...prev, member!]);
+    if (over.id === "unassigned-members" && member) {
+      setUnassignedMembers((prev) => [...prev, member]);
       updated = updated.filter((c) => c.ministers.length > 0);
       setCompanionships(updated);
       return;
@@ -91,13 +128,7 @@ function App() {
           if (c.id !== targetId) return c;
 
           if (minister) {
-            const existingGender = c.ministers[0]?.gender;
-            if (
-              c.ministers.length >= 3 ||
-              (existingGender && existingGender !== minister.gender)
-            )
-              return c;
-
+            if (c.ministers.length >= 3) return c;
             return { ...c, ministers: [...c.ministers, minister] };
           }
           return c;
@@ -114,7 +145,6 @@ function App() {
 
           if (member) {
             if (c.members?.some((me) => me.id === member.id)) return c;
-
             return { ...c, members: [...(c.members || []), member] };
           }
           return c;
@@ -126,16 +156,16 @@ function App() {
     // — 5. Auto‑delete empty companionships —
     updated = updated.filter((c) => c.ministers.length > 0);
     setCompanionships(updated);
+    setActiveDragStartZoneId(null);
   };
 
   const handleAddMinister = () => {
     const newMinisterData = {
       id: `min-${uuidv4()}`,
       name: newMinister.name,
-      gender: newMinister.gender as "male" | "female",
     };
     setUnassignedMinisters((prev) => [...prev, newMinisterData]);
-    setNewMinister({ name: "", gender: "male" });
+    setNewMinister({ name: "" });
     setShowAddMinisterForm(false);
   };
 
@@ -143,17 +173,107 @@ function App() {
     const newMemberData = {
       id: `mem-${uuidv4()}`,
       name: newMember.name,
-      isFamily: newMember.isFamily,
     };
     setUnassignedMembers((prev) => [...prev, newMemberData]);
-    setNewMember({ name: "", isFamily: false });
+    setNewMember({ name: "" });
     setShowAddMemberForm(false);
   };
 
+  const handleBulkAdd = (type: "minister" | "member") => {
+    const names = bulkInput
+      .split("\n") // Split input by new lines
+      .map((name) => name.trim()) // Trim whitespace
+      .filter((name) => name.length > 0); // Remove empty lines
+
+    if (type === "minister") {
+      const newMinisters = names.map((name) => ({
+        id: `min-${uuidv4()}`,
+        name,
+      }));
+      setUnassignedMinisters((prev) => [...prev, ...newMinisters]);
+    } else if (type === "member") {
+      const newMembers = names.map((name) => ({
+        id: `mem-${uuidv4()}`,
+        name,
+      }));
+      setUnassignedMembers((prev) => [...prev, ...newMembers]);
+    }
+
+    setBulkInput(""); // Clear the input
+    setShowBulkAddForm(false); // Hide the form
+  };
+
+  const handleRemoveMinister = (id: string) => {
+    console.log("Removing minister with ID:", id);
+
+    // Remove from unassigned ministers
+    setUnassignedMinisters((prev) =>
+      prev.filter((minister) => minister.id !== id)
+    );
+
+    // Remove from companionships
+    setCompanionships(
+      (prev) =>
+        prev
+          .map((companionship) => ({
+            ...companionship,
+            ministers: companionship.ministers.filter(
+              (minister) => minister.id !== id
+            ),
+          }))
+          .filter(
+            (companionship) =>
+              companionship.ministers.length > 0 ||
+              (companionship.members ?? []).length > 0
+          ) // Keep only non-empty companionships
+    );
+  };
+
+  const handleRemoveMember = (id: string) => {
+    console.log("Removing member with ID:", id);
+
+    // Remove from unassigned members
+    setUnassignedMembers((prev) => prev.filter((member) => member.id !== id));
+
+    // Remove from companionships
+    setCompanionships((prev) =>
+      prev.map((companionship) => ({
+        ...companionship,
+        members: (companionship.members ?? []).filter(
+          (member) => member.id !== id
+        ),
+      }))
+    );
+  };
+
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+      {/* ------------- APP CONTAINER ------------- */}
       <div className="app-container">
         <h1 className="app-title">Ministering App</h1>
+        <button onClick={() => setShowBulkAddForm(true)}>
+          Add Multiple People
+        </button>
+        {showBulkAddForm && (
+          <div className="form-container">
+            <h3>Add Multiple People</h3>
+            <textarea
+              placeholder="Enter one name per line"
+              value={bulkInput}
+              onChange={(e) => setBulkInput(e.target.value)}
+              rows={5}
+            />
+            <div className="form-buttons">
+              <button onClick={() => handleBulkAdd("minister")}>
+                Add as Ministers
+              </button>
+              <button onClick={() => handleBulkAdd("member")}>
+                Add as Members
+              </button>
+              <button onClick={() => setShowBulkAddForm(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
 
         {/* ------------- MAIN GRID ------------- */}
         <div className="main-grid">
@@ -163,7 +283,11 @@ function App() {
               <p className="na-text">No Unassigned Ministers</p>
             ) : (
               unassignedMinisters.map((m) => (
-                <MinisterCard key={m.id} minister={m} />
+                <MinisterCard
+                  key={m.id}
+                  minister={m}
+                  onRemove={handleRemoveMinister}
+                />
               ))
             )}
           </DropZone>
@@ -182,15 +306,6 @@ function App() {
                   setNewMinister({ ...newMinister, name: e.target.value })
                 }
               />
-              <select
-                value={newMinister.gender}
-                onChange={(e) =>
-                  setNewMinister({ ...newMinister, gender: e.target.value })
-                }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
               <button onClick={handleAddMinister}>Add Minister</button>
               <button onClick={() => setShowAddMinisterForm(false)}>
                 Cancel
@@ -207,7 +322,11 @@ function App() {
               <div key={c.id} className="comp-card">
                 <div className="ministers-group">
                   {c.ministers.map((m) => (
-                    <MinisterCard key={m.id} minister={m} />
+                    <MinisterCard
+                      key={m.id}
+                      minister={m}
+                      onRemove={handleRemoveMinister}
+                    />
                   ))}
                   {c.ministers.length < 3 && (
                     <DropZone
@@ -218,7 +337,11 @@ function App() {
                 </div>
                 <div className="members-group">
                   {c.members?.map((m) => (
-                    <MemberCard key={m.id} member={m} />
+                    <MemberCard
+                      key={m.id}
+                      member={m}
+                      onRemove={handleRemoveMember}
+                    />
                   ))}
                   <DropZone
                     id={`companionship-${c.id}-members`}
@@ -241,7 +364,9 @@ function App() {
           {unassignedMembers.length === 0 ? (
             <p className="na-text">No Unassigned Members</p>
           ) : (
-            unassignedMembers.map((m) => <MemberCard key={m.id} member={m} />)
+            unassignedMembers.map((m) => (
+              <MemberCard key={m.id} member={m} onRemove={handleRemoveMember} />
+            ))
           )}
         </DropZone>
         <button onClick={() => setShowAddMemberForm(true)}>Add Member</button>
@@ -256,16 +381,6 @@ function App() {
                 setNewMember({ ...newMember, name: e.target.value })
               }
             />
-            <label>
-              <input
-                type="checkbox"
-                checked={newMember.isFamily}
-                onChange={(e) =>
-                  setNewMember({ ...newMember, isFamily: e.target.checked })
-                }
-              />
-              Is Family
-            </label>
             <button onClick={handleAddMember}>Add Member</button>
             <button onClick={() => setShowAddMemberForm(false)}>Cancel</button>
           </div>

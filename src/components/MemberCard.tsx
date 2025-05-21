@@ -5,9 +5,10 @@ import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 
 interface MemberCardProps {
   member: Member;
+  onRemove: (id: string) => void;
 }
 
-export default function MemberCard({ member }: MemberCardProps) {
+export default function MemberCard({ member, onRemove }: MemberCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: member.id,
   });
@@ -19,15 +20,20 @@ export default function MemberCard({ member }: MemberCardProps) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="member-card"
-    >
-      <h4 className="member-name">{member.name}</h4>
-      <p className="member-type">{member.isFamily ? "Family" : "Individual"}</p>
+    <div ref={setNodeRef} style={style} className="member-card">
+      <div {...attributes} {...listeners} className="drag-handle">
+        <h4 className="member-name">{member.name}</h4>
+      </div>
+      <button
+        onClick={(e) => {
+          console.log("Remove button clicked for member:", member.id);
+          e.stopPropagation();
+          onRemove(member.id);
+        }}
+        className="remove-button"
+      >
+        Remove
+      </button>
     </div>
   );
 }
