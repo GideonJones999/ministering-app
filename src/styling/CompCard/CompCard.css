@@ -1,0 +1,21 @@
+.comp-card {
+  border: 1px solid #ccc;
+  border-radius: 5em;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #ebf8ff;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+}
+.comp-card h4 {
+  font-weight: 600;
+}
+.comp-card p {
+  font-size: 0.875rem;
+  color: #718096;
+}
+.comp-card .member-group,
+.comp-card .minister-group {
+  margin: 5em;
+}/*# sourceMappingURL=CompCard.css.map */

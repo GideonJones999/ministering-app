@@ -1,0 +1,11 @@
+.app-container {
+  min-height: 100vh;
+  background-color: #f7fafc; // Equivalent to Tailwind's bg-gray-100
+  padding: 1.5rem; // Equivalent to Tailwind's p-6
+}
+
+.app-title {
+  font-size: 1.5rem; // Equivalent to Tailwind's text-2xl
+  font-weight: bold; // Equivalent to Tailwind's font-bold
+  margin-bottom: 1rem; // Equivalent to Tailwind's mb-4
+}

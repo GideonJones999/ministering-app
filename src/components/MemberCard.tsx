@@ -1,6 +1,7 @@
 import React from "react";
 import { Member } from "../data/exampleData";
 import { useDraggable } from "@dnd-kit/core";
+import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 
 interface MemberCardProps {
   member: Member;
@@ -15,8 +16,6 @@ export default function MemberCard({ member }: MemberCardProps) {
     transform: transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined,
-    border: "1px solid #ccc",
-    borderRadius: "5em",
   };
 
   return (
@@ -25,12 +24,10 @@ export default function MemberCard({ member }: MemberCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="border rounded p-3 mb-2 bg-blue-50 member-card"
+      className="member-card"
     >
-      <h4 className="font-semibold">{member.name}</h4>
-      <p className="text-sm text-gray-600">
-        {member.isFamily ? "Family" : "Individual"}
-      </p>
+      <h4 className="member-name">{member.name}</h4>
+      <p className="member-type">{member.isFamily ? "Family" : "Individual"}</p>
     </div>
   );
 }

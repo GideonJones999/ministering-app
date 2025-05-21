@@ -1,6 +1,7 @@
 import React from "react";
 import { Minister } from "../data/exampleData";
 import { useDraggable } from "@dnd-kit/core";
+import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 
 interface MinisterCardProps {
   minister: Minister;
@@ -15,8 +16,6 @@ export default function MinisterCard({ minister }: MinisterCardProps) {
     transform: transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined,
-    border: "1px solid #ccc",
-    borderRadius: "5em",
   };
 
   return (
@@ -25,10 +24,10 @@ export default function MinisterCard({ minister }: MinisterCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="border rounded p-3 mb-2 bg-blue-50 minister-card"
+      className="minister-card"
     >
-      <h4 className="font-semibold">{minister.name}</h4>
-      <p className="text-sm text-gray-600">{minister.gender}</p>
+      <h4 className="minister-name">{minister.name}</h4>
+      <p className="minister-gender">{minister.gender}</p>
     </div>
   );
 }

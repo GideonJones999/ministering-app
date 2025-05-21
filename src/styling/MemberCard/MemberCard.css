@@ -1,0 +1,19 @@
+.member-card,
+.minister-card {
+  border: 1px solid gray;
+  border-radius: 5em;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #ebf8ff;
+  text-align: center;
+  width: 10em;
+}
+.member-card h4,
+.minister-card h4 {
+  font-weight: 600;
+}
+.member-card p,
+.minister-card p {
+  font-size: 0.875rem;
+  color: #718096;
+}/*# sourceMappingURL=MemberCard.css.map */

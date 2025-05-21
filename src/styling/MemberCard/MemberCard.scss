@@ -1,0 +1,19 @@
+.member-card,
+.minister-card {
+  border: 1px solid gray;
+  border-radius: 5em;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #ebf8ff; // Equivalent to Tailwind's bg-blue-50
+  text-align: center;
+  width: 10em;
+
+  h4 {
+    font-weight: 600; // Equivalent to Tailwind's font-semibold
+  }
+
+  p {
+    font-size: 0.875rem; // Equivalent to Tailwind's text-sm
+    color: #718096; // Equivalent to Tailwind's text-gray-600
+  }
+}

@@ -1,0 +1,11 @@
+.app-container {
+  min-height: 100vh;
+  background-color: #f7fafc;
+  padding: 1.5rem;
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}/*# sourceMappingURL=home.css.map */

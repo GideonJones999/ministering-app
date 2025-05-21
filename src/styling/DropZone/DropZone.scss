@@ -1,0 +1,25 @@
+.drop-zone {
+  min-height: 80px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  transition: background-color 0.3s;
+
+  &.is-over {
+    background-color: #f0f0f0; // Highlight when dragging over
+  }
+
+  &.disabled {
+    border-color: #e0e0e0;
+    color: #a0a0a0;
+  }
+
+  .drop-zone-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+}

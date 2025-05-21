@@ -1,5 +1,6 @@
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
+import "../styling/DropZone/DropZone.scss"; // Import your CSS file
 
 export default function DropZone({
   id,
@@ -17,18 +18,13 @@ export default function DropZone({
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[80px] border-2 border-dashed rounded p-4 text-center
-        ${
-          disabled
-            ? "border-gray-200 text-gray-300"
-            : "border-gray-400 text-gray-500"
-        }
-        ${isOver && !disabled ? "bg-gray-100" : ""}`}
+      className={`drop-zone ${disabled ? "disabled" : ""}
+        ${isOver && !disabled ? "is-over" : ""}`}
     >
-      <div className="font-semibold mb-2">
+      <div className="drop-zone-header">
         <h2>{label}</h2>
       </div>
-      {children}
+      <div className="drop-zone-content">{children}</div>
     </div>
   );
 }
