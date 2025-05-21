@@ -25,7 +25,7 @@ export default function MemberCard({ member }: MemberCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="border rounded p-3 mb-2 bg-blue-50"
+      className="border rounded p-3 mb-2 bg-blue-50 member-card"
     >
       <h4 className="font-semibold">{member.name}</h4>
       <p className="text-sm text-gray-600">

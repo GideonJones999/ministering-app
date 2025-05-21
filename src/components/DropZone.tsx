@@ -25,7 +25,9 @@ export default function DropZone({
         }
         ${isOver && !disabled ? "bg-gray-100" : ""}`}
     >
-      <div className="font-semibold mb-2">{label}</div>
+      <div className="font-semibold mb-2">
+        <h2>{label}</h2>
+      </div>
       {children}
     </div>
   );
