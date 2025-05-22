@@ -1,5 +1,5 @@
 .drop-zone {
-  min-height: 80px;
+  min-height: 2rem;
   border: 2px dashed #ccc;
   border-radius: 8px;
   padding: 1rem;
@@ -21,4 +21,13 @@
   height: auto;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.small {
+  min-height: 1rem;
+  padding: 0.25rem;
+  margin: 0.5rem;
+}
+.small h2 {
+  font-size: 1rem;
 }/*# sourceMappingURL=DropZone.css.map */

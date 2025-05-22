@@ -7,11 +7,13 @@ export default function DropZone({
   label,
   disabled = false,
   children,
+  small = false,
 }: {
   id: string;
   label: string;
   disabled?: boolean;
   children?: React.ReactNode;
+  small?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id, disabled });
 
@@ -19,7 +21,7 @@ export default function DropZone({
     <div
       ref={setNodeRef}
       className={`drop-zone ${disabled ? "disabled" : ""}
-        ${isOver && !disabled ? "is-over" : ""}`}
+        ${isOver && !disabled ? "is-over" : ""} ${small ? "small" : ""}`}
     >
       <div className="drop-zone-header">
         <h2>{label}</h2>

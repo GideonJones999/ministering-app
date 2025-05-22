@@ -42,7 +42,7 @@ export default function MemberCard({
         className="card-button"
         id="remove-button"
       >
-        Remove
+        Delete
       </button>
       <button
         onClick={(e) => {

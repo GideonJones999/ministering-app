@@ -19,8 +19,6 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
-// Change Rows into Columns
-// Organize Lists Alphabetically
 // Add Search for Minister List and Member List
 // Add Search for Companionships
 // Add Districts
@@ -131,7 +129,9 @@ function App() {
     // Handle drop zones
     if (over.id === "unassigned-ministers" && minister) {
       // Dropped back on Unassigned Ministers panel
-      setUnassignedMinisters((prev) => [...prev, minister]);
+      setUnassignedMinisters((prev) =>
+        [...prev, minister].sort((a, b) => a.name.localeCompare(b.name))
+      );
       updated = updated.filter(
         (c) => c.ministers.length > 0 || c.members.length > 0
       );
@@ -141,7 +141,9 @@ function App() {
 
     if (over.id === "unassigned-members" && member) {
       // Dropped back on Unassigned Members panel
-      setUnassignedMembers((prev) => [...prev, member]);
+      setUnassignedMembers((prev) =>
+        [...prev, member].sort((a, b) => a.name.localeCompare(b.name))
+      );
       updated = updated.filter(
         (c) => c.ministers.length > 0 || c.members.length > 0
       );
@@ -303,14 +305,54 @@ function App() {
     );
   };
 
+  const handleSaveEdit = () => {
+    if (!editingPerson) return;
+
+    if (editingPerson.type === "minister") {
+      // Update minister
+      setUnassignedMinisters((prev) =>
+        prev.map((m) =>
+          m.id === editingPerson.id ? { ...m, name: editingPerson.name } : m
+        )
+      );
+      setCompanionships((prev) =>
+        prev.map((c) => ({
+          ...c,
+          ministers: c.ministers.map((m) =>
+            m.id === editingPerson.id ? { ...m, name: editingPerson.name } : m
+          ),
+        }))
+      );
+    } else {
+      // Update member
+      setUnassignedMembers((prev) =>
+        prev.map((m) =>
+          m.id === editingPerson.id ? { ...m, name: editingPerson.name } : m
+        )
+      );
+      setCompanionships((prev) =>
+        prev.map((c) => ({
+          ...c,
+          members: c.members?.map((m) =>
+            m.id === editingPerson.id ? { ...m, name: editingPerson.name } : m
+          ),
+        }))
+      );
+    }
+
+    setEditingPerson(null); // Close the form
+  };
+
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
       {/* ------------- APP CONTAINER ------------- */}
       <div className="app-container">
-        <h1 className="app-title">Ministering App</h1>
-        <button onClick={() => setShowBulkAddForm(true)}>
-          Add Multiple People
-        </button>
+        <div className="app-header">
+          <h1 className="app-title">Ministering App</h1>
+          <button onClick={() => setShowBulkAddForm(true)}>
+            Add Multiple People
+          </button>
+        </div>
         {showBulkAddForm && (
           <div className="form-container">
             <h3>Add Multiple People</h3>
@@ -328,12 +370,17 @@ function App() {
                 Add as Members
               </button>
               <button onClick={() => handleBulkAdd("both")}>Add to Both</button>
-              <button onClick={() => setShowBulkAddForm(false)}>Cancel</button>
+              <button
+                className="cancel-button"
+                onClick={() => setShowBulkAddForm(false)}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         )}
         {editingPerson && (
-          <div className="form-container">
+          <div className="form-container" id="edit-form">
             <h3>
               Edit {editingPerson.type === "minister" ? "Minister" : "Member"}
             </h3>
@@ -343,97 +390,75 @@ function App() {
               onChange={(e) =>
                 setEditingPerson({ ...editingPerson, name: e.target.value })
               }
-            />
-            <button
-              onClick={() => {
-                if (editingPerson.type === "minister") {
-                  setUnassignedMinisters((prev) =>
-                    prev.map((m) =>
-                      m.id === editingPerson.id
-                        ? { ...m, name: editingPerson.name }
-                        : m
-                    )
-                  );
-                  setCompanionships((prev) =>
-                    prev.map((c) => ({
-                      ...c,
-                      ministers: c.ministers.map((m) =>
-                        m.id === editingPerson.id
-                          ? { ...m, name: editingPerson.name }
-                          : m
-                      ),
-                    }))
-                  );
-                } else {
-                  setUnassignedMembers((prev) =>
-                    prev.map((m) =>
-                      m.id === editingPerson.id
-                        ? { ...m, name: editingPerson.name }
-                        : m
-                    )
-                  );
-                  setCompanionships((prev) =>
-                    prev.map((c) => ({
-                      ...c,
-                      members: c.members?.map((m) =>
-                        m.id === editingPerson.id
-                          ? { ...m, name: editingPerson.name }
-                          : m
-                      ),
-                    }))
-                  );
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSaveEdit();
                 }
-                setEditingPerson(null);
               }}
+            />
+            <button onClick={handleSaveEdit}>Save</button>
+            <button
+              className="cancel-button"
+              onClick={() => setEditingPerson(null)}
             >
-              Save
+              Cancel
             </button>
-            <button onClick={() => setEditingPerson(null)}>Cancel</button>
           </div>
         )}
         {/* ------------- MAIN GRID ------------- */}
         <div className="main-grid">
           {/* ------------ Unassigned Ministers ------------ */}
-          <DropZone id="unassigned-ministers" label="Unassigned Ministers">
-            {unassignedMinisters.length === 0 ? (
-              <p className="na-text">No Unassigned Ministers</p>
-            ) : (
-              unassignedMinisters.map((m) => (
-                <MinisterCard
-                  key={m.id}
-                  minister={m}
-                  onRemove={handleRemoveMinister}
-                  setEditingPerson={setEditingPerson}
+          <div className="main-column" id="unassigned-ministers-column">
+            <DropZone
+              id="unassigned-ministers"
+              label="Unassigned Ministers Here"
+            >
+              {unassignedMinisters.length === 0 ? (
+                <p className="na-text">No Unassigned Ministers</p>
+              ) : (
+                unassignedMinisters.map((m) => (
+                  <MinisterCard
+                    key={m.id}
+                    minister={m}
+                    onRemove={handleRemoveMinister}
+                    setEditingPerson={setEditingPerson}
+                  />
+                ))
+              )}
+            </DropZone>
+            <button onClick={() => setShowAddMinisterForm(true)}>
+              Add Minister
+            </button>
+            {showAddMinisterForm && (
+              <div className="form-container">
+                <h3>Add New Minister</h3>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={newMinister.name}
+                  onChange={(e) =>
+                    setNewMinister({ ...newMinister, name: e.target.value })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleAddMinister();
+                    }
+                  }}
                 />
-              ))
+                <button onClick={handleAddMinister}>Add Minister</button>
+                <button
+                  className="cancel-button"
+                  onClick={() => setShowAddMinisterForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             )}
-          </DropZone>
-          <button onClick={() => setShowAddMinisterForm(true)}>
-            Add Minister
-          </button>
-
-          {showAddMinisterForm && (
-            <div className="form-container">
-              <h3>Add New Minister</h3>
-              <input
-                type="text"
-                placeholder="Name"
-                value={newMinister.name}
-                onChange={(e) =>
-                  setNewMinister({ ...newMinister, name: e.target.value })
-                }
-              />
-              <button onClick={handleAddMinister}>Add Minister</button>
-              <button onClick={() => setShowAddMinisterForm(false)}>
-                Cancel
-              </button>
-            </div>
-          )}
+          </div>
 
           {/* ------------ Companionships Column ------------ */}
-          <div className="main-column">
+          <div className="main-column" id="comp-column">
             <h2 className="column-title">Companionships</h2>
-
             {/* Existing companionships */}
             {companionships.map((c) => (
               <div key={c.id} className="comp-card">
@@ -450,6 +475,7 @@ function App() {
                     <DropZone
                       id={`companionship-${c.id}`}
                       label="Drop minister here"
+                      small={true}
                     />
                   )}
                 </div>
@@ -465,6 +491,7 @@ function App() {
                   <DropZone
                     id={`companionship-${c.id}-members`}
                     label="Drop member here"
+                    small={true}
                   />
                 </div>
               </div>
@@ -476,39 +503,53 @@ function App() {
               label="Drop minister here to start a new companionship"
             />
           </div>
-        </div>
 
-        {/* ------------ Unassigned Members ------------ */}
-        <DropZone id="unassigned-members" label="Unassigned Members">
-          {unassignedMembers.length === 0 ? (
-            <p className="na-text">No Unassigned Members</p>
-          ) : (
-            unassignedMembers.map((m) => (
-              <MemberCard
-                key={m.id}
-                member={m}
-                setEditingPerson={setEditingPerson}
-                onRemove={handleRemoveMember}
-              />
-            ))
-          )}
-        </DropZone>
-        <button onClick={() => setShowAddMemberForm(true)}>Add Member</button>
-        {showAddMemberForm && (
-          <div className="form-container">
-            <h3>Add New Member</h3>
-            <input
-              type="text"
-              placeholder="Name"
-              value={newMember.name}
-              onChange={(e) =>
-                setNewMember({ ...newMember, name: e.target.value })
-              }
-            />
-            <button onClick={handleAddMember}>Add Member</button>
-            <button onClick={() => setShowAddMemberForm(false)}>Cancel</button>
+          {/* ------------ Unassigned Members ------------ */}
+          <div className="main-column">
+            <DropZone id="unassigned-members" label="Unassigned Members Here">
+              {unassignedMembers.length === 0 ? (
+                <p className="na-text">No Unassigned Members</p>
+              ) : (
+                unassignedMembers.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    setEditingPerson={setEditingPerson}
+                    onRemove={handleRemoveMember}
+                  />
+                ))
+              )}
+            </DropZone>
+            <button onClick={() => setShowAddMemberForm(true)}>
+              Add Member
+            </button>
+            {showAddMemberForm && (
+              <div className="form-container">
+                <h3>Add New Member</h3>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={newMember.name}
+                  onChange={(e) =>
+                    setNewMember({ ...newMember, name: e.target.value })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleAddMember();
+                    }
+                  }}
+                />
+                <button onClick={handleAddMember}>Add Member</button>
+                <button
+                  className="cancel-button"
+                  onClick={() => setShowAddMemberForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </DndContext>
   );
