@@ -45,6 +45,7 @@ function App() {
     name: string;
     type: "minister" | "member";
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getContainerId = (id: string): string | null => {
     if (unassignedMinisters.some((m) => m.id === id)) {
@@ -343,6 +344,9 @@ function App() {
     setEditingPerson(null); // Close the form
   };
 
+  const matchesSearch = (name: string) =>
+    name.toLowerCase().includes(searchQuery.toLowerCase());
+
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
       {/* ------------- APP CONTAINER ------------- */}
@@ -352,6 +356,15 @@ function App() {
           <button onClick={() => setShowBulkAddForm(true)}>
             Add Multiple People
           </button>
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="Search all names..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
         </div>
         {showBulkAddForm && (
           <div className="form-container">
@@ -416,14 +429,16 @@ function App() {
               {unassignedMinisters.length === 0 ? (
                 <p className="na-text">No Unassigned Ministers</p>
               ) : (
-                unassignedMinisters.map((m) => (
-                  <MinisterCard
-                    key={m.id}
-                    minister={m}
-                    onRemove={handleRemoveMinister}
-                    setEditingPerson={setEditingPerson}
-                  />
-                ))
+                unassignedMinisters
+                  .filter((m) => matchesSearch(m.name))
+                  .map((m) => (
+                    <MinisterCard
+                      key={m.id}
+                      minister={m}
+                      onRemove={handleRemoveMinister}
+                      setEditingPerson={setEditingPerson}
+                    />
+                  ))
               )}
             </DropZone>
             <button onClick={() => setShowAddMinisterForm(true)}>
@@ -460,42 +475,56 @@ function App() {
           <div className="main-column" id="comp-column">
             <h2 className="column-title">Companionships</h2>
             {/* Existing companionships */}
-            {companionships.map((c) => (
-              <div key={c.id} className="comp-card">
-                <div className="ministers-group">
-                  {c.ministers.map((m) => (
-                    <MinisterCard
-                      key={m.id}
-                      minister={m}
-                      onRemove={handleRemoveMinister}
-                      setEditingPerson={setEditingPerson}
-                    />
-                  ))}
-                  {c.ministers.length < 3 && (
+            {companionships.map((c) => {
+              const filteredMinisters = c.ministers.filter((m) =>
+                matchesSearch(m.name)
+              );
+              const filteredMembers = (c.members ?? []).filter((m) =>
+                matchesSearch(m.name)
+              );
+
+              if (
+                filteredMinisters.length === 0 &&
+                filteredMembers.length === 0
+              )
+                return null;
+              return (
+                <div key={c.id} className="comp-card">
+                  <div className="ministers-group">
+                    {c.ministers.map((m) => (
+                      <MinisterCard
+                        key={m.id}
+                        minister={m}
+                        onRemove={handleRemoveMinister}
+                        setEditingPerson={setEditingPerson}
+                      />
+                    ))}
+                    {c.ministers.length < 3 && (
+                      <DropZone
+                        id={`companionship-${c.id}`}
+                        label="Drop minister here"
+                        small={true}
+                      />
+                    )}
+                  </div>
+                  <div className="members-group">
+                    {c.members?.map((m) => (
+                      <MemberCard
+                        key={m.id}
+                        member={m}
+                        onRemove={handleRemoveMember}
+                        setEditingPerson={setEditingPerson}
+                      />
+                    ))}
                     <DropZone
-                      id={`companionship-${c.id}`}
-                      label="Drop minister here"
+                      id={`companionship-${c.id}-members`}
+                      label="Drop member here"
                       small={true}
                     />
-                  )}
+                  </div>
                 </div>
-                <div className="members-group">
-                  {c.members?.map((m) => (
-                    <MemberCard
-                      key={m.id}
-                      member={m}
-                      onRemove={handleRemoveMember}
-                      setEditingPerson={setEditingPerson}
-                    />
-                  ))}
-                  <DropZone
-                    id={`companionship-${c.id}-members`}
-                    label="Drop member here"
-                    small={true}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Zone to create new companionships */}
             <DropZone
@@ -510,14 +539,16 @@ function App() {
               {unassignedMembers.length === 0 ? (
                 <p className="na-text">No Unassigned Members</p>
               ) : (
-                unassignedMembers.map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    setEditingPerson={setEditingPerson}
-                    onRemove={handleRemoveMember}
-                  />
-                ))
+                unassignedMembers
+                  .filter((m) => matchesSearch(m.name))
+                  .map((m) => (
+                    <MemberCard
+                      key={m.id}
+                      member={m}
+                      setEditingPerson={setEditingPerson}
+                      onRemove={handleRemoveMember}
+                    />
+                  ))
               )}
             </DropZone>
             <button onClick={() => setShowAddMemberForm(true)}>
