@@ -6,11 +6,17 @@ import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 interface MinisterCardProps {
   minister: Minister;
   onRemove: (id: string) => void;
+  setEditingPerson: (person: {
+    id: string;
+    name: string;
+    type: "minister";
+  }) => void;
 }
 
 export default function MinisterCard({
   minister,
   onRemove,
+  setEditingPerson,
 }: MinisterCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: minister.id,
@@ -33,9 +39,24 @@ export default function MinisterCard({
           e.stopPropagation();
           onRemove(minister.id);
         }}
-        className="remove-button"
+        className="card-button"
+        id="remove-button"
       >
         Remove
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditingPerson({
+            id: minister.id,
+            name: minister.name,
+            type: "minister",
+          });
+        }}
+        className="card-button"
+        id="edit-button"
+      >
+        Edit
       </button>
     </div>
   );

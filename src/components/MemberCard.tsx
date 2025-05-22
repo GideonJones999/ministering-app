@@ -6,9 +6,18 @@ import "../styling/MemberCard/MemberCard.scss"; // Import your CSS file
 interface MemberCardProps {
   member: Member;
   onRemove: (id: string) => void;
+  setEditingPerson: (person: {
+    id: string;
+    name: string;
+    type: "member";
+  }) => void;
 }
 
-export default function MemberCard({ member, onRemove }: MemberCardProps) {
+export default function MemberCard({
+  member,
+  onRemove,
+  setEditingPerson,
+}: MemberCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: member.id,
   });
@@ -30,9 +39,24 @@ export default function MemberCard({ member, onRemove }: MemberCardProps) {
           e.stopPropagation();
           onRemove(member.id);
         }}
-        className="remove-button"
+        className="card-button"
+        id="remove-button"
       >
         Remove
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditingPerson({
+            id: member.id,
+            name: member.name,
+            type: "member",
+          });
+        }}
+        className="card-button"
+        id="edit-button"
+      >
+        Edit
       </button>
     </div>
   );

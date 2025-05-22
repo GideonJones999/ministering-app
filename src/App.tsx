@@ -21,9 +21,10 @@ import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
 // Change Rows into Columns
 // Organize Lists Alphabetically
-// Add Distrcits
+// Add Search for Minister List and Member List
+// Add Search for Companionships
+// Add Districts
 // Import Tutorial
-// Edit a minister or member
 // Priority Tag to certain Members (Binary)
 // Export the list to a CSV
 
@@ -41,71 +42,115 @@ function App() {
   const [activeDragStartZoneId, setActiveDragStartZoneId] = useState<
     string | null
   >(null);
+  const [editingPerson, setEditingPerson] = useState<{
+    id: string;
+    name: string;
+    type: "minister" | "member";
+  } | null>(null);
+
+  const getContainerId = (id: string): string | null => {
+    if (unassignedMinisters.some((m) => m.id === id)) {
+      console.log(`ID ${id} found in unassigned-ministers`);
+      return "unassigned-ministers";
+    }
+    if (unassignedMembers.some((m) => m.id === id)) {
+      console.log(`ID ${id} found in unassigned-members`);
+      return "unassigned-members";
+    }
+
+    const found = companionships.find(
+      (c) =>
+        c.ministers.some((m) => m.id === id) ||
+        c.members?.some((m) => m.id === id)
+    );
+
+    if (!found) {
+      console.log(`ID ${id} not found in any container`);
+      return null;
+    }
+
+    const isMinister = found.ministers.some((m) => m.id === id);
+    const containerId = isMinister
+      ? `companionship-${found.id}`
+      : `companionship-${found.id}-members`;
+
+    console.log(`ID ${id} found in ${containerId}`);
+    return containerId;
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
+    const activeId = event.active.id;
 
-    // Determine which zone the item started in
-    const isMinister = unassignedMinisters.some((m) => m.id === active.id);
-    const isMember = unassignedMembers.some((m) => m.id === active.id);
-
-    if (isMinister) {
-      setActiveDragStartZoneId("unassigned-ministers");
-    } else if (isMember) {
-      setActiveDragStartZoneId("unassigned-members");
-    } else {
-      // Look for the companionship it came from
-      const fromComp = companionships.find(
-        (c) =>
-          c.ministers.some((m) => m.id === active.id) ||
-          c.members?.some((m) => m.id === active.id)
-      );
-      if (fromComp) {
-        const minister = fromComp.ministers.find((m) => m.id === active.id);
-        const zoneId = minister
-          ? `companionship-${fromComp.id}`
-          : `companionship-${fromComp.id}-members`;
-        setActiveDragStartZoneId(zoneId);
-      }
+    if (typeof activeId !== "string") {
+      console.error("Invalid active ID:", activeId);
+      return;
     }
+    const sourceId = getContainerId(activeId);
+    console.log("Dragging from:", sourceId);
+    setActiveDragStartZoneId(sourceId);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || over.id === activeDragStartZoneId) {
-      console.log("Drag ended without a valid drop or no real drag happened.");
-      setActiveDragStartZoneId(null);
+
+    // If there's no valid drop target, do nothing
+    if (!over) {
+      console.log("Drag ended without a valid drop.");
       return;
     }
+
     console.log("Drag ended:", { active, over });
-    const minister = unassignedMinisters.find((m) => m.id === active.id);
-    const member = unassignedMembers.find((m) => m.id === active.id);
+
+    // If the card is dropped back into the same zone, do nothing
+    if (activeDragStartZoneId === over.id) {
+      console.log("Card dropped back into the same zone. No action taken.");
+      return;
+    }
+
+    const minister =
+      unassignedMinisters.find((m) => m.id === active.id) ||
+      companionships
+        .flatMap((c) => c.ministers)
+        .find((m) => m.id === active.id);
+
+    const member =
+      unassignedMembers.find((m) => m.id === active.id) ||
+      companionships
+        .flatMap((c) => c.members || [])
+        .find((m) => m.id === active.id);
+
     if (!minister && !member) return;
 
-    // — 1. Remove minister/member from any current companionship —
+    // Remove minister/member from any current companionship
     let updated = companionships.map((c) => ({
       ...c,
       ministers: c.ministers.filter((mi) => mi.id !== active.id),
       members: c.members?.filter((me) => me.id !== active.id) || [],
     }));
 
-    // — 2. Dropped back on Unassigned panel —
+    // Handle drop zones
     if (over.id === "unassigned-ministers" && minister) {
+      // Dropped back on Unassigned Ministers panel
       setUnassignedMinisters((prev) => [...prev, minister]);
-      updated = updated.filter((c) => c.ministers.length > 0);
+      updated = updated.filter(
+        (c) => c.ministers.length > 0 || c.members.length > 0
+      );
       setCompanionships(updated);
       return;
     }
 
     if (over.id === "unassigned-members" && member) {
+      // Dropped back on Unassigned Members panel
       setUnassignedMembers((prev) => [...prev, member]);
-      updated = updated.filter((c) => c.ministers.length > 0);
+      updated = updated.filter(
+        (c) => c.ministers.length > 0 || c.members.length > 0
+      );
       setCompanionships(updated);
       return;
     }
 
-    // — 3. Dropped on NEW companionship zone —
     if (over.id === "new-companionship") {
+      // Dropped on NEW companionship zone
       updated.push({
         id: uuidv4(),
         ministers: minister ? [minister] : [],
@@ -117,18 +162,19 @@ function App() {
       return;
     }
 
-    // — 4. Dropped on an EXISTING companionship zone —
     if (typeof over.id === "string") {
+      // Dropped on an EXISTING companionship zone
       if (
         over.id.startsWith("companionship-") &&
         !over.id.endsWith("-members")
       ) {
+        // Dropped on ministers section of a companionship
         const targetId = over.id.replace("companionship-", "");
         updated = updated.map((c) => {
           if (c.id !== targetId) return c;
 
           if (minister) {
-            if (c.ministers.length >= 3) return c;
+            if (c.ministers.length >= 3) return c; // Limit to 3 ministers
             return { ...c, ministers: [...c.ministers, minister] };
           }
           return c;
@@ -137,6 +183,7 @@ function App() {
           prev.filter((m) => m.id !== active.id)
         ); // Remove from unassigned ministers
       } else if (over.id.endsWith("-members")) {
+        // Dropped on members section of a companionship
         const targetId = over.id
           .replace("companionship-", "")
           .replace("-members", "");
@@ -144,7 +191,7 @@ function App() {
           if (c.id !== targetId) return c;
 
           if (member) {
-            if (c.members?.some((me) => me.id === member.id)) return c;
+            if (c.members?.some((me) => me.id === member.id)) return c; // Avoid duplicates
             return { ...c, members: [...(c.members || []), member] };
           }
           return c;
@@ -153,10 +200,11 @@ function App() {
       }
     }
 
-    // — 5. Auto‑delete empty companionships —
-    updated = updated.filter((c) => c.ministers.length > 0);
+    // Auto-delete empty companionships
+    updated = updated.filter(
+      (c) => c.ministers.length > 0 || c.members.length > 0
+    );
     setCompanionships(updated);
-    setActiveDragStartZoneId(null);
   };
 
   const handleAddMinister = () => {
@@ -164,7 +212,9 @@ function App() {
       id: `min-${uuidv4()}`,
       name: newMinister.name,
     };
-    setUnassignedMinisters((prev) => [...prev, newMinisterData]);
+    setUnassignedMinisters((prev) =>
+      [...prev, newMinisterData].sort((a, b) => a.name.localeCompare(b.name))
+    );
     setNewMinister({ name: "" });
     setShowAddMinisterForm(false);
   };
@@ -174,29 +224,36 @@ function App() {
       id: `mem-${uuidv4()}`,
       name: newMember.name,
     };
-    setUnassignedMembers((prev) => [...prev, newMemberData]);
+    setUnassignedMembers((prev) =>
+      [...prev, newMemberData].sort((a, b) => a.name.localeCompare(b.name))
+    );
     setNewMember({ name: "" });
     setShowAddMemberForm(false);
   };
 
-  const handleBulkAdd = (type: "minister" | "member") => {
+  const handleBulkAdd = (type: "minister" | "member" | "both") => {
     const names = bulkInput
       .split("\n") // Split input by new lines
       .map((name) => name.trim()) // Trim whitespace
       .filter((name) => name.length > 0); // Remove empty lines
 
-    if (type === "minister") {
+    if (type === "minister" || type === "both") {
       const newMinisters = names.map((name) => ({
         id: `min-${uuidv4()}`,
         name,
       }));
-      setUnassignedMinisters((prev) => [...prev, ...newMinisters]);
-    } else if (type === "member") {
+      setUnassignedMinisters((prev) =>
+        [...prev, ...newMinisters].sort((a, b) => a.name.localeCompare(b.name))
+      );
+    }
+    if (type === "member" || type === "both") {
       const newMembers = names.map((name) => ({
         id: `mem-${uuidv4()}`,
         name,
       }));
-      setUnassignedMembers((prev) => [...prev, ...newMembers]);
+      setUnassignedMembers((prev) =>
+        [...prev, ...newMembers].sort((a, b) => a.name.localeCompare(b.name))
+      );
     }
 
     setBulkInput(""); // Clear the input
@@ -270,11 +327,70 @@ function App() {
               <button onClick={() => handleBulkAdd("member")}>
                 Add as Members
               </button>
+              <button onClick={() => handleBulkAdd("both")}>Add to Both</button>
               <button onClick={() => setShowBulkAddForm(false)}>Cancel</button>
             </div>
           </div>
         )}
-
+        {editingPerson && (
+          <div className="form-container">
+            <h3>
+              Edit {editingPerson.type === "minister" ? "Minister" : "Member"}
+            </h3>
+            <input
+              type="text"
+              value={editingPerson.name}
+              onChange={(e) =>
+                setEditingPerson({ ...editingPerson, name: e.target.value })
+              }
+            />
+            <button
+              onClick={() => {
+                if (editingPerson.type === "minister") {
+                  setUnassignedMinisters((prev) =>
+                    prev.map((m) =>
+                      m.id === editingPerson.id
+                        ? { ...m, name: editingPerson.name }
+                        : m
+                    )
+                  );
+                  setCompanionships((prev) =>
+                    prev.map((c) => ({
+                      ...c,
+                      ministers: c.ministers.map((m) =>
+                        m.id === editingPerson.id
+                          ? { ...m, name: editingPerson.name }
+                          : m
+                      ),
+                    }))
+                  );
+                } else {
+                  setUnassignedMembers((prev) =>
+                    prev.map((m) =>
+                      m.id === editingPerson.id
+                        ? { ...m, name: editingPerson.name }
+                        : m
+                    )
+                  );
+                  setCompanionships((prev) =>
+                    prev.map((c) => ({
+                      ...c,
+                      members: c.members?.map((m) =>
+                        m.id === editingPerson.id
+                          ? { ...m, name: editingPerson.name }
+                          : m
+                      ),
+                    }))
+                  );
+                }
+                setEditingPerson(null);
+              }}
+            >
+              Save
+            </button>
+            <button onClick={() => setEditingPerson(null)}>Cancel</button>
+          </div>
+        )}
         {/* ------------- MAIN GRID ------------- */}
         <div className="main-grid">
           {/* ------------ Unassigned Ministers ------------ */}
@@ -287,6 +403,7 @@ function App() {
                   key={m.id}
                   minister={m}
                   onRemove={handleRemoveMinister}
+                  setEditingPerson={setEditingPerson}
                 />
               ))
             )}
@@ -326,6 +443,7 @@ function App() {
                       key={m.id}
                       minister={m}
                       onRemove={handleRemoveMinister}
+                      setEditingPerson={setEditingPerson}
                     />
                   ))}
                   {c.ministers.length < 3 && (
@@ -341,6 +459,7 @@ function App() {
                       key={m.id}
                       member={m}
                       onRemove={handleRemoveMember}
+                      setEditingPerson={setEditingPerson}
                     />
                   ))}
                   <DropZone
@@ -365,7 +484,12 @@ function App() {
             <p className="na-text">No Unassigned Members</p>
           ) : (
             unassignedMembers.map((m) => (
-              <MemberCard key={m.id} member={m} onRemove={handleRemoveMember} />
+              <MemberCard
+                key={m.id}
+                member={m}
+                setEditingPerson={setEditingPerson}
+                onRemove={handleRemoveMember}
+              />
             ))
           )}
         </DropZone>
