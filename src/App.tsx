@@ -268,7 +268,7 @@ function App() {
     });
 
     if (type === "minister" || type === "both") {
-      const newMinisters = names.map((name) => ({
+      const newMinisters = uniqueNames.map((name) => ({
         id: `min-${uuidv4()}`,
         name,
       }));
@@ -277,7 +277,7 @@ function App() {
       );
     }
     if (type === "member" || type === "both") {
-      const newMembers = names.map((name) => ({
+      const newMembers = uniqueNames.map((name) => ({
         id: `mem-${uuidv4()}`,
         name,
       }));
