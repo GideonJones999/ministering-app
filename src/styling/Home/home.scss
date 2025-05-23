@@ -1,14 +1,16 @@
 .app-container {
-  min-height: 100vh;
+  height: calc(100vh - 6rem);
+  width: calc(100vw - 6rem);
+  overflow-x: hidden;
   background-color: #f7fafc; // Equivalent to Tailwind's bg-gray-100
-  padding: 1.5rem; // Equivalent to Tailwind's p-6
+  padding: 3rem; // Equivalent to Tailwind's p-6
   .app-header {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     width: 50vw;
     align-items: center;
-
+    height: 10rem;
     .app-title {
       font-size: 1.5rem; // Equivalent to Tailwind's text-2xl
       font-weight: bold; // Equivalent to Tailwind's font-bold
@@ -80,16 +82,19 @@
     flex-direction: row;
     justify-content: space-between;
     margin: 1rem 0;
+    height: calc(100vh - 16rem);
+    overflow-y: auto;
     .main-column {
       width: 30em;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      min-height: 80vh;
-    }
-    #comp-column {
-      width: fit-content;
+      overflow-y: auto;
+      overflow-x: hidden;
+      &#comp-column {
+        min-height: 100%;
+        max-width: fit-content;
+      }
     }
   }
 }
@@ -101,7 +106,26 @@ button {
   background-color: #007bff;
   color: #fff;
   cursor: pointer;
+  &.cancel-button {
+    background-color: #6c757d; // Equivalent to Tailwind's bg-gray-500
+  }
 }
-.cancel-button {
-  background-color: #6c757d; // Equivalent to Tailwind's bg-gray-500
+
+.drag-overlay {
+  background-color: #007bff;
+  border: 1px solid gray;
+  border-radius: 1.5em;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: auto;
+  width: 12em;
+  height: 8em;
+
+  /* Center the overlay on the cursor */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* Ensure it doesn't block interactions */
 }

@@ -5,6 +5,9 @@
   padding: 1rem;
   text-align: center;
   transition: background-color 0.3s;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
 
   &.is-over {
     background-color: #f0f0f0; // Highlight when dragging over
@@ -24,13 +27,21 @@
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-}
-
-.small {
-  min-height: 1rem;
-  padding: 0.25rem;
-  h2 {
-    font-size: 1rem; // Equivalent to Tailwind's text-base
+  &.small {
+    min-height: 1rem;
+    padding: 0.25rem;
+    margin: 0.5rem;
+    overflow: hidden;
+    h2 {
+      font-size: 1rem; // Equivalent to Tailwind's text-base
+    }
   }
-  margin: 0.5rem;
+  &#drop-zone-new-companionship {
+    overflow: hidden;
+    .drop-zone-header {
+      h2 {
+        margin-top: -0.5em;
+      }
+    }
+  }
 }

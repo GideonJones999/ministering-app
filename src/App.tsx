@@ -3,7 +3,7 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
-  useDroppable,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   ministers as allMinisters,
@@ -46,6 +46,9 @@ function App() {
     type: "minister" | "member";
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeDragItem, setActiveDragItem] = useState<
+    Minister | Member | null
+  >(null);
 
   const getContainerId = (id: string): string | null => {
     if (unassignedMinisters.some((m) => m.id === id)) {
@@ -84,12 +87,25 @@ function App() {
       console.error("Invalid active ID:", activeId);
       return;
     }
+    const minister =
+      unassignedMinisters.find((m) => m.id === activeId) ||
+      companionships.flatMap((c) => c.ministers).find((m) => m.id === activeId);
+
+    const member =
+      unassignedMembers.find((m) => m.id === activeId) ||
+      companionships
+        .flatMap((c) => c.members || [])
+        .find((m) => m.id === activeId);
+
+    setActiveDragItem(minister || member || null); // Set the dragged item
+    console.log("Dragging item:", { minister, member });
     const sourceId = getContainerId(activeId);
     console.log("Dragging from:", sourceId);
     setActiveDragStartZoneId(sourceId);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragItem(null); // Clear the dragged item
     const { active, over } = event;
 
     // If there's no valid drop target, do nothing
@@ -349,6 +365,13 @@ function App() {
 
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+      <DragOverlay>
+        {activeDragItem ? (
+          <div className="drag-overlay">
+            <h4>{activeDragItem.name}</h4>
+          </div>
+        ) : null}
+      </DragOverlay>
       {/* ------------- APP CONTAINER ------------- */}
       <div className="app-container">
         <div className="app-header">

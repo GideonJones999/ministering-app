@@ -4,7 +4,7 @@
   border-radius: 1.5em;
   margin: 0.5rem;
   padding-bottom: 0.5rem;
-  background-color: #ebf8ff; // Equivalent to Tailwind's bg-blue-50
+  background-color: #8498a1; // Equivalent to Tailwind's bg-blue-50
   text-align: center;
   width: auto;
   min-width: 9em;
@@ -16,6 +16,13 @@
     &:active {
       cursor: grabbing;
     }
+  }
+
+  &.member-card {
+    background-color: #ebf8ff; // Equivalent to Tailwind's bg-blue-50
+    margin: 0.25rem;
+    min-width: 6em;
+    max-width: 9em;
   }
 
   h4 {

@@ -5,6 +5,9 @@
   padding: 1rem;
   text-align: center;
   transition: background-color 0.3s;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 .drop-zone.is-over {
   background-color: #f0f0f0;
@@ -22,12 +25,18 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-
-.small {
+.drop-zone.small {
   min-height: 1rem;
   padding: 0.25rem;
   margin: 0.5rem;
+  overflow: hidden;
 }
-.small h2 {
+.drop-zone.small h2 {
   font-size: 1rem;
+}
+.drop-zone#drop-zone-new-companionship {
+  overflow: hidden;
+}
+.drop-zone#drop-zone-new-companionship .drop-zone-header h2 {
+  margin-top: -0.5em;
 }/*# sourceMappingURL=DropZone.css.map */

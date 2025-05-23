@@ -22,6 +22,7 @@ export default function DropZone({
       ref={setNodeRef}
       className={`drop-zone ${disabled ? "disabled" : ""}
         ${isOver && !disabled ? "is-over" : ""} ${small ? "small" : ""}`}
+        id={`drop-zone-${id}`}
     >
       <div className="drop-zone-header">
         <h2>{label}</h2>
