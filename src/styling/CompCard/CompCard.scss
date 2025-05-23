@@ -1,4 +1,4 @@
-.comp-card {
+div.comp-card {
   border: 1px solid #ccc;
   border-radius: 1em;
   padding: 1rem;
@@ -8,7 +8,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-
+  width: 75%;
+  justify-content: space-evenly;
   h4 {
     font-weight: 600; // Equivalent to Tailwind's font-semibold
   }
@@ -17,8 +18,15 @@
     font-size: 0.875rem; // Equivalent to Tailwind's text-sm
     color: #718096; // Equivalent to Tailwind's text-gray-600
   }
-  .member-group,
-  .minister-group {
-    margin: 5em;
+  div.members-group,
+  div.ministers-group {
+    // margin: 5em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    div.drag-handle {
+      padding: 0.5rem;
+    }
   }
 }

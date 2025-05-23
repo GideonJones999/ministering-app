@@ -11,12 +11,14 @@ interface MinisterCardProps {
     name: string;
     type: "minister";
   }) => void;
+  matchingMemberMinisters?: Minister[];
 }
 
 export default function MinisterCard({
   minister,
   onRemove,
   setEditingPerson,
+  matchingMemberMinisters = [],
 }: MinisterCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: minister.id,
@@ -32,6 +34,12 @@ export default function MinisterCard({
     <div ref={setNodeRef} style={style} className="minister-card">
       <div {...attributes} {...listeners} className="drag-handle">
         <h4 className="minister-name">{minister.name}</h4>
+        {matchingMemberMinisters.length > 0 && (
+          <p className="assigned-ministers">
+            Assigned to: <br />
+            {matchingMemberMinisters.map((m) => m.name).join(", ")}
+          </p>
+        )}
       </div>
       <button
         onClick={(e) => {

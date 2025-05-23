@@ -19,8 +19,6 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
-// Add Search for Minister List and Member List
-// Add Search for Companionships
 // Add Districts
 // Import Tutorial
 // Priority Tag to certain Members (Binary)
@@ -52,11 +50,9 @@ function App() {
 
   const getContainerId = (id: string): string | null => {
     if (unassignedMinisters.some((m) => m.id === id)) {
-      console.log(`ID ${id} found in unassigned-ministers`);
       return "unassigned-ministers";
     }
     if (unassignedMembers.some((m) => m.id === id)) {
-      console.log(`ID ${id} found in unassigned-members`);
       return "unassigned-members";
     }
 
@@ -67,7 +63,6 @@ function App() {
     );
 
     if (!found) {
-      console.log(`ID ${id} not found in any container`);
       return null;
     }
 
@@ -76,7 +71,6 @@ function App() {
       ? `companionship-${found.id}`
       : `companionship-${found.id}-members`;
 
-    console.log(`ID ${id} found in ${containerId}`);
     return containerId;
   };
 
@@ -98,9 +92,7 @@ function App() {
         .find((m) => m.id === activeId);
 
     setActiveDragItem(minister || member || null); // Set the dragged item
-    console.log("Dragging item:", { minister, member });
     const sourceId = getContainerId(activeId);
-    console.log("Dragging from:", sourceId);
     setActiveDragStartZoneId(sourceId);
   };
 
@@ -110,15 +102,11 @@ function App() {
 
     // If there's no valid drop target, do nothing
     if (!over) {
-      console.log("Drag ended without a valid drop.");
       return;
     }
 
-    console.log("Drag ended:", { active, over });
-
     // If the card is dropped back into the same zone, do nothing
     if (activeDragStartZoneId === over.id) {
-      console.log("Card dropped back into the same zone. No action taken.");
       return;
     }
 
@@ -256,6 +244,29 @@ function App() {
       .map((name) => name.trim()) // Trim whitespace
       .filter((name) => name.length > 0); // Remove empty lines
 
+    const existingNames = new Set<string>();
+
+    // Collect all existing names from unassigned lists and companionships
+    unassignedMinisters.forEach((minister) => existingNames.add(minister.name));
+    unassignedMembers.forEach((member) => existingNames.add(member.name));
+    companionships.forEach((companionship) => {
+      companionship.ministers.forEach((minister) =>
+        existingNames.add(minister.name)
+      );
+      companionship.members?.forEach((member) =>
+        existingNames.add(member.name)
+      );
+    });
+
+    const duplicates: string[] = [];
+    const uniqueNames = names.filter((name) => {
+      if (existingNames.has(name)) {
+        duplicates.push(name);
+        return false; // Exclude duplicates
+      }
+      return true; // Include unique names
+    });
+
     if (type === "minister" || type === "both") {
       const newMinisters = names.map((name) => ({
         id: `min-${uuidv4()}`,
@@ -275,13 +286,20 @@ function App() {
       );
     }
 
+    // Show a warning if there are duplicates
+    if (duplicates.length > 0) {
+      alert(
+        `The following names were not added because they already exist: ${duplicates.join(
+          ", "
+        )}`
+      );
+    }
+
     setBulkInput(""); // Clear the input
     setShowBulkAddForm(false); // Hide the form
   };
 
   const handleRemoveMinister = (id: string) => {
-    console.log("Removing minister with ID:", id);
-
     // Remove from unassigned ministers
     setUnassignedMinisters((prev) =>
       prev.filter((minister) => minister.id !== id)
@@ -306,8 +324,6 @@ function App() {
   };
 
   const handleRemoveMember = (id: string) => {
-    console.log("Removing member with ID:", id);
-
     // Remove from unassigned members
     setUnassignedMembers((prev) => prev.filter((member) => member.id !== id));
 
@@ -363,6 +379,208 @@ function App() {
   const matchesSearch = (name: string) =>
     name.toLowerCase().includes(searchQuery.toLowerCase());
 
+  const handleExportToCSV = () => {
+    const rows: string[][] = [];
+
+    // Add header for unassigned ministers
+    rows.push(["Unassigned Ministers"]);
+    unassignedMinisters.forEach((minister) => {
+      rows.push([minister.name]);
+    });
+
+    // Add header for unassigned members
+    rows.push([]);
+    rows.push(["Unassigned Members"]);
+    unassignedMembers.forEach((member) => {
+      rows.push([member.name]);
+    });
+
+    // Add header for companionships
+    rows.push([]);
+    rows.push(["Member", "Ministers"]);
+    companionships.forEach((companionship) => {
+      companionship.members?.forEach((member) => {
+        const ministers = companionship.ministers
+          .map((minister) => minister.name)
+          .join(", ");
+        rows.push([member.name, ministers]);
+      });
+    });
+
+    // Convert rows to CSV format
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      rows.map((row) => row.join(",")).join("\n");
+
+    // Get the current date
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    // Create a download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `companionship-assignments-${formattedDate}.csv`
+    );
+    document.body.appendChild(link);
+
+    // Trigger the download
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+  };
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+
+      // Parse the CSV content
+      const rows = content
+        .trim()
+        .split("\n")
+        .map((row) => row.split(",").map((cell) => cell.trim()));
+
+      // Initialize new state
+      const newUnassignedMinisters: Minister[] = [];
+      const newUnassignedMembers: Member[] = [];
+      const newCompanionships: Companionship[] = [];
+
+      let currentSection:
+        | "unassigned-ministers"
+        | "unassigned-members"
+        | "companionships"
+        | null = null;
+
+      // Maps to track existing ministers and members by name
+      const existingMinisters = new Map<string, Minister>();
+      const existingMembers = new Map<string, Member>();
+
+      // Populate maps with existing unassigned ministers and members
+      unassignedMinisters.forEach((minister) => {
+        existingMinisters.set(minister.name, minister);
+      });
+      unassignedMembers.forEach((member) => {
+        existingMembers.set(member.name, member);
+      });
+
+      // Populate maps with ministers and members in companionships
+      companionships.forEach((companionship) => {
+        companionship.ministers.forEach((minister) => {
+          existingMinisters.set(minister.name, minister);
+        });
+        companionship.members?.forEach((member) => {
+          existingMembers.set(member.name, member);
+        });
+      });
+
+      rows.forEach((row) => {
+        const rowHeader = row
+          .map((cell) => cell.trim())
+          .join(",")
+          .toLowerCase();
+
+        // Detect section headers
+        if (rowHeader === "unassigned ministers") {
+          currentSection = "unassigned-ministers";
+          return;
+        } else if (rowHeader === "unassigned members") {
+          currentSection = "unassigned-members";
+          return;
+        } else if (rowHeader === "member,ministers") {
+          currentSection = "companionships";
+          return;
+        }
+
+        // Handle row based on current section
+        if (currentSection === "unassigned-ministers") {
+          const ministerName = row[0];
+          if (ministerName && !existingMinisters.has(ministerName)) {
+            const minister = { id: `min-${uuidv4()}`, name: ministerName };
+            newUnassignedMinisters.push(minister);
+            existingMinisters.set(ministerName, minister);
+          }
+        } else if (currentSection === "unassigned-members") {
+          const memberName = row[0];
+          if (memberName && !existingMembers.has(memberName)) {
+            const member = { id: `mem-${uuidv4()}`, name: memberName };
+            newUnassignedMembers.push(member);
+            existingMembers.set(memberName, member);
+          }
+        } else if (currentSection === "companionships") {
+          const memberName = row[0];
+          const ministerNames = row
+            .slice(1)
+            .map((name) => name.trim())
+            .filter(Boolean);
+
+          if (memberName) {
+            let member = existingMembers.get(memberName);
+            if (!member) {
+              member = { id: `mem-${uuidv4()}`, name: memberName };
+              existingMembers.set(memberName, member);
+            }
+
+            const ministers = ministerNames.map((name) => {
+              let minister = existingMinisters.get(name);
+              if (!minister) {
+                minister = { id: `min-${uuidv4()}`, name };
+                existingMinisters.set(name, minister);
+              }
+              return minister;
+            });
+
+            // Try to find an existing companionship with the same ministers
+            let companionship = newCompanionships.find((c) => {
+              const existingNames = c.ministers.map((m) => m.name).sort();
+              const newNames = ministers.map((m) => m.name).sort();
+              return (
+                existingNames.length === newNames.length &&
+                existingNames.every((name, idx) => name === newNames[idx])
+              );
+            });
+
+            if (companionship) {
+              companionship.members = [
+                ...(companionship.members || []),
+                member,
+              ];
+            } else {
+              newCompanionships.push({
+                id: `comp-${uuidv4()}`,
+                ministers,
+                members: [member],
+              });
+            }
+          }
+        }
+      });
+
+      // Update state
+      setCompanionships((prev) => [...prev, ...newCompanionships]);
+      setUnassignedMembers((prev) =>
+        [...prev, ...newUnassignedMembers].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+      );
+      setUnassignedMinisters((prev) =>
+        [...prev, ...newUnassignedMinisters].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+      );
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
       <DragOverlay>
@@ -376,9 +594,23 @@ function App() {
       <div className="app-container">
         <div className="app-header">
           <h1 className="app-title">Ministering App</h1>
-          <button onClick={() => setShowBulkAddForm(true)}>
-            Add Multiple People
-          </button>
+          <div className="header-buttons">
+            <button
+              onClick={() => document.getElementById("file-input")?.click()}
+            >
+              Import CSV
+            </button>
+            <input
+              id="file-input"
+              type="file"
+              accept=".csv"
+              style={{ display: "none" }}
+              onChange={handleImportCSV}
+            />
+            <button onClick={() => setShowBulkAddForm(true)}>
+              Add Multiple People
+            </button>
+          </div>
           <div className="search-container">
             <input
               type="text"
@@ -445,23 +677,44 @@ function App() {
         <div className="main-grid">
           {/* ------------ Unassigned Ministers ------------ */}
           <div className="main-column" id="unassigned-ministers-column">
-            <DropZone
-              id="unassigned-ministers"
-              label="Unassigned Ministers Here"
-            >
+            <h2 className="column-title">Ministers</h2>
+            <DropZone id="unassigned-ministers" label="Drop Ministers Here">
               {unassignedMinisters.length === 0 ? (
                 <p className="na-text">No Unassigned Ministers</p>
               ) : (
                 unassignedMinisters
                   .filter((m) => matchesSearch(m.name))
-                  .map((m) => (
-                    <MinisterCard
-                      key={m.id}
-                      minister={m}
-                      onRemove={handleRemoveMinister}
-                      setEditingPerson={setEditingPerson}
-                    />
-                  ))
+                  .map((m) => {
+                    // Find a member with the same name as the minister
+                    const matchingMember =
+                      unassignedMembers.find(
+                        (member) => member.name === m.name
+                      ) ||
+                      companionships
+                        .flatMap((c) => c.members || [])
+                        .find((member) => member.name === m.name);
+
+                    // Get the ministers assigned to the matching member
+                    const matchingMemberMinisters = matchingMember
+                      ? companionships
+                          .filter((c) =>
+                            c.members?.some(
+                              (member) => member.id === matchingMember.id
+                            )
+                          )
+                          .flatMap((c) => c.ministers)
+                      : [];
+
+                    return (
+                      <MinisterCard
+                        key={m.id}
+                        minister={m}
+                        onRemove={handleRemoveMinister}
+                        setEditingPerson={setEditingPerson}
+                        matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                      />
+                    );
+                  })
               )}
             </DropZone>
             <button onClick={() => setShowAddMinisterForm(true)}>
@@ -514,14 +767,35 @@ function App() {
               return (
                 <div key={c.id} className="comp-card">
                   <div className="ministers-group">
-                    {c.ministers.map((m) => (
-                      <MinisterCard
-                        key={m.id}
-                        minister={m}
-                        onRemove={handleRemoveMinister}
-                        setEditingPerson={setEditingPerson}
-                      />
-                    ))}
+                    {c.ministers.map((m) => {
+                      const matchingMember =
+                        unassignedMembers.find(
+                          (member) => member.name === m.name
+                        ) ||
+                        companionships
+                          .flatMap((c) => c.members || [])
+                          .find((member) => member.name === m.name);
+
+                      const matchingMemberMinisters = matchingMember
+                        ? companionships
+                            .filter((c) =>
+                              c.members?.some(
+                                (member) => member.id === matchingMember.id
+                              )
+                            )
+                            .flatMap((c) => c.ministers)
+                        : [];
+
+                      return (
+                        <MinisterCard
+                          key={m.id}
+                          minister={m}
+                          onRemove={handleRemoveMinister}
+                          setEditingPerson={setEditingPerson}
+                          matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                        />
+                      );
+                    })}
                     {c.ministers.length < 3 && (
                       <DropZone
                         id={`companionship-${c.id}`}
@@ -554,11 +828,13 @@ function App() {
               id="new-companionship"
               label="Drop minister here to start a new companionship"
             />
+            <button onClick={handleExportToCSV}>Export to CSV</button>
           </div>
 
           {/* ------------ Unassigned Members ------------ */}
-          <div className="main-column">
-            <DropZone id="unassigned-members" label="Unassigned Members Here">
+          <div className="main-column" id="unassigned-members-column">
+            <h2 className="column-title">Members</h2>
+            <DropZone id="unassigned-members" label="Drop Members Here">
               {unassignedMembers.length === 0 ? (
                 <p className="na-text">No Unassigned Members</p>
               ) : (
