@@ -9,6 +9,7 @@
   height: 100%;
   overflow-y: scroll;
   overflow-x: hidden;
+  align-content: center;
 
   &.is-over {
     background-color: #f0f0f0; // Highlight when dragging over
@@ -39,10 +40,7 @@
   }
   &#drop-zone-new-companionship {
     overflow: hidden;
-    .drop-zone-header {
-      h2 {
-        margin-top: -0.5em;
-      }
-    }
+    display: flex;
+    align-items: center;
   }
 }

@@ -244,31 +244,35 @@ function App() {
       .map((name) => name.trim()) // Trim whitespace
       .filter((name) => name.length > 0); // Remove empty lines
 
-    const existingNames = new Set<string>();
+    const duplicateMinisters: string[] = [];
+    const duplicateMembers: string[] = [];
+    const uniqueMinisters: string[] = [];
+    const uniqueMembers: string[] = [];
 
-    // Collect all existing names from unassigned lists and companionships
-    unassignedMinisters.forEach((minister) => existingNames.add(minister.name));
-    unassignedMembers.forEach((member) => existingNames.add(member.name));
-    companionships.forEach((companionship) => {
-      companionship.ministers.forEach((minister) =>
-        existingNames.add(minister.name)
-      );
-      companionship.members?.forEach((member) =>
-        existingNames.add(member.name)
-      );
-    });
-
-    const duplicates: string[] = [];
-    const uniqueNames = names.filter((name) => {
-      if (existingNames.has(name)) {
-        duplicates.push(name);
-        return false; // Exclude duplicates
+    // Check for duplicates in the respective lists
+    names.forEach((name) => {
+      if (
+        (type === "minister" || type === "both") &&
+        unassignedMinisters.some((m) => m.name === name)
+      ) {
+        duplicateMinisters.push(name);
+      } else if (type === "minister" || type === "both") {
+        uniqueMinisters.push(name);
       }
-      return true; // Include unique names
+
+      if (
+        (type === "member" || type === "both") &&
+        unassignedMembers.some((m) => m.name === name)
+      ) {
+        duplicateMembers.push(name);
+      } else if (type === "member" || type === "both") {
+        uniqueMembers.push(name);
+      }
     });
 
+    // Add unique ministers
     if (type === "minister" || type === "both") {
-      const newMinisters = uniqueNames.map((name) => ({
+      const newMinisters = uniqueMinisters.map((name) => ({
         id: `min-${uuidv4()}`,
         name,
       }));
@@ -276,8 +280,10 @@ function App() {
         [...prev, ...newMinisters].sort((a, b) => a.name.localeCompare(b.name))
       );
     }
+
+    // Add unique members
     if (type === "member" || type === "both") {
-      const newMembers = uniqueNames.map((name) => ({
+      const newMembers = uniqueMembers.map((name) => ({
         id: `mem-${uuidv4()}`,
         name,
       }));
@@ -286,13 +292,24 @@ function App() {
       );
     }
 
-    // Show a warning if there are duplicates
-    if (duplicates.length > 0) {
-      alert(
-        `The following names were not added because they already exist: ${duplicates.join(
+    // Show warnings for duplicates
+    const duplicateWarnings: string[] = [];
+    if (duplicateMinisters.length > 0) {
+      duplicateWarnings.push(
+        `The following names were not added as ministers because they already exist: ${duplicateMinisters.join(
           ", "
         )}`
       );
+    }
+    if (duplicateMembers.length > 0) {
+      duplicateWarnings.push(
+        `The following names were not added as members because they already exist: ${duplicateMembers.join(
+          ", "
+        )}`
+      );
+    }
+    if (duplicateWarnings.length > 0) {
+      alert(duplicateWarnings.join("\n"));
     }
 
     setBulkInput(""); // Clear the input
@@ -750,84 +767,86 @@ function App() {
           {/* ------------ Companionships Column ------------ */}
           <div className="main-column" id="comp-column">
             <h2 className="column-title">Companionships</h2>
-            {/* Existing companionships */}
-            {companionships.map((c) => {
-              const filteredMinisters = c.ministers.filter((m) =>
-                matchesSearch(m.name)
-              );
-              const filteredMembers = (c.members ?? []).filter((m) =>
-                matchesSearch(m.name)
-              );
+            <div className="comps-container">
+              {/* Existing companionships */}
+              {companionships.map((c) => {
+                const filteredMinisters = c.ministers.filter((m) =>
+                  matchesSearch(m.name)
+                );
+                const filteredMembers = (c.members ?? []).filter((m) =>
+                  matchesSearch(m.name)
+                );
 
-              if (
-                filteredMinisters.length === 0 &&
-                filteredMembers.length === 0
-              )
-                return null;
-              return (
-                <div key={c.id} className="comp-card">
-                  <div className="ministers-group">
-                    {c.ministers.map((m) => {
-                      const matchingMember =
-                        unassignedMembers.find(
-                          (member) => member.name === m.name
-                        ) ||
-                        companionships
-                          .flatMap((c) => c.members || [])
-                          .find((member) => member.name === m.name);
+                if (
+                  filteredMinisters.length === 0 &&
+                  filteredMembers.length === 0
+                )
+                  return null;
+                return (
+                  <div key={c.id} className="comp-card">
+                    <div className="ministers-group">
+                      {c.ministers.map((m) => {
+                        const matchingMember =
+                          unassignedMembers.find(
+                            (member) => member.name === m.name
+                          ) ||
+                          companionships
+                            .flatMap((c) => c.members || [])
+                            .find((member) => member.name === m.name);
 
-                      const matchingMemberMinisters = matchingMember
-                        ? companionships
-                            .filter((c) =>
-                              c.members?.some(
-                                (member) => member.id === matchingMember.id
+                        const matchingMemberMinisters = matchingMember
+                          ? companionships
+                              .filter((c) =>
+                                c.members?.some(
+                                  (member) => member.id === matchingMember.id
+                                )
                               )
-                            )
-                            .flatMap((c) => c.ministers)
-                        : [];
+                              .flatMap((c) => c.ministers)
+                          : [];
 
-                      return (
-                        <MinisterCard
-                          key={m.id}
-                          minister={m}
-                          onRemove={handleRemoveMinister}
-                          setEditingPerson={setEditingPerson}
-                          matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                        return (
+                          <MinisterCard
+                            key={m.id}
+                            minister={m}
+                            onRemove={handleRemoveMinister}
+                            setEditingPerson={setEditingPerson}
+                            matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                          />
+                        );
+                      })}
+                      {c.ministers.length < 3 && (
+                        <DropZone
+                          id={`companionship-${c.id}`}
+                          label="Drop minister here"
+                          small={true}
                         />
-                      );
-                    })}
-                    {c.ministers.length < 3 && (
+                      )}
+                    </div>
+                    <div className="members-group">
+                      {c.members?.map((m) => (
+                        <MemberCard
+                          key={m.id}
+                          member={m}
+                          onRemove={handleRemoveMember}
+                          setEditingPerson={setEditingPerson}
+                        />
+                      ))}
                       <DropZone
-                        id={`companionship-${c.id}`}
-                        label="Drop minister here"
+                        id={`companionship-${c.id}-members`}
+                        label="Drop member here"
                         small={true}
                       />
-                    )}
+                    </div>
                   </div>
-                  <div className="members-group">
-                    {c.members?.map((m) => (
-                      <MemberCard
-                        key={m.id}
-                        member={m}
-                        onRemove={handleRemoveMember}
-                        setEditingPerson={setEditingPerson}
-                      />
-                    ))}
-                    <DropZone
-                      id={`companionship-${c.id}-members`}
-                      label="Drop member here"
-                      small={true}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {/* Zone to create new companionships */}
-            <DropZone
-              id="new-companionship"
-              label="Drop minister here to start a new companionship"
-            />
+              {/* Zone to create new companionships */}
+              <DropZone
+                id="new-companionship"
+                label="Drop minister here to start a new companionship"
+              />
+            </div>
             <button onClick={handleExportToCSV}>Export to CSV</button>
           </div>
 

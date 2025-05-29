@@ -9,6 +9,7 @@
   height: 100%;
   overflow-y: scroll;
   overflow-x: hidden;
+  align-content: center;
 }
 .drop-zone.is-over {
   background-color: #f0f0f0;
@@ -37,7 +38,6 @@
 }
 .drop-zone#drop-zone-new-companionship {
   overflow: hidden;
-}
-.drop-zone#drop-zone-new-companionship .drop-zone-header h2 {
-  margin-top: -0.5em;
+  display: flex;
+  align-items: center;
 }/*# sourceMappingURL=DropZone.css.map */
