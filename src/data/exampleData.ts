@@ -6,6 +6,7 @@ export type Minister = {
 export type Member = {
   id: string;
   name: string;
+  priority?: boolean;
 };
 
 export type Companionship = {

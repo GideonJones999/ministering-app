@@ -22,7 +22,6 @@ import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 // Add Districts Dropdown
 // Import Tutorial
 // Priority Tag to certain Members (Binary)
-// Add an "Expected Members per Companionship" count to header
 
 function App() {
   // State management
@@ -409,7 +408,7 @@ function App() {
     rows.push([]);
     rows.push(["Unassigned Members"]);
     unassignedMembers.forEach((member) => {
-      rows.push([member.name]);
+      rows.push([member.name, member.priority ? "1" : "0"]);
     });
 
     // Add header for companionships
@@ -420,7 +419,10 @@ function App() {
       const members = (companionship.members ?? [])
         .map((m) => m.name)
         .join("; ");
-      rows.push([ministers, members]);
+      const priorities = (companionship.members ?? [])
+        .map((m) => (m.priority ? "1" : "0"))
+        .join("; ");
+      rows.push([ministers, members, priorities]);
     });
 
     // Convert rows to CSV format
@@ -531,9 +533,14 @@ function App() {
           }
         } else if (currentSection === "unassigned-members") {
           const memberName = row[0];
+          const priority = row[1] === "1"; // Check if priority is set
           console.log("Processing member:", memberName);
           if (memberName && !existingMembers.has(memberName)) {
-            const member = { id: `mem-${uuidv4()}`, name: memberName };
+            const member = {
+              id: `mem-${uuidv4()}`,
+              name: memberName,
+              priority,
+            };
             newUnassignedMembers.push(member);
             existingMembers.set(memberName, member);
           } else if (memberName) {
@@ -551,8 +558,9 @@ function App() {
                 .map((name) => name.trim())
                 .filter(Boolean)
             : [];
-
-          // Create or get Minister objects
+          const priorities = row[2]
+            ? row[2].split(";").map((val) => val.trim() === "1")
+            : []; // Create or get Minister objects
           const ministers = ministerNames.map((name) => {
             let minister = existingMinisters.get(name);
             if (!minister) {
@@ -563,11 +571,14 @@ function App() {
           });
 
           // Create or get Member objects
-          const members = memberNames.map((name) => {
+          const members = memberNames.map((name, idx) => {
             let member = existingMembers.get(name);
+            const priority = priorities[idx] || false;
             if (!member) {
-              member = { id: `mem-${uuidv4()}`, name };
+              member = { id: `mem-${uuidv4()}`, name, priority };
               existingMembers.set(name, member);
+            } else {
+              member = { ...member, priority };
             }
             return member;
           });
@@ -599,6 +610,20 @@ function App() {
     };
 
     reader.readAsText(file);
+  };
+
+  const handleTogglePriority = (id: string) => {
+    setUnassignedMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, priority: !m.priority } : m))
+    );
+    setCompanionships((prev) =>
+      prev.map((c) => ({
+        ...c,
+        members: c.members?.map((m) =>
+          m.id === id ? { ...m, priority: !m.priority } : m
+        ),
+      }))
+    );
   };
 
   function showDuplicateWarnings(
@@ -877,6 +902,7 @@ function App() {
                           member={m}
                           onRemove={handleRemoveMember}
                           setEditingPerson={setEditingPerson}
+                          onTogglePriority={handleTogglePriority}
                         />
                       ))}
                       <DropZone
@@ -916,6 +942,7 @@ function App() {
                       member={m}
                       setEditingPerson={setEditingPerson}
                       onRemove={handleRemoveMember}
+                      onTogglePriority={handleTogglePriority}
                     />
                   ))
               )}
