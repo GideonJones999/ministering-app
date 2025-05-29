@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 70vw;
+  width: 60vw;
   align-items: center;
   height: 10rem;
 }
@@ -109,8 +109,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 82.75%;
-  max-height: calc(100vh - 20rem);
+  height: calc(100vh - 20rem);
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;

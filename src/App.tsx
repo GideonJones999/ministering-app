@@ -19,10 +19,10 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
-// Add Districts
+// Add Districts Dropdown
 // Import Tutorial
 // Priority Tag to certain Members (Binary)
-// Export the list to a CSV
+// Add an "Expected Members per Minister" count to header
 
 function App() {
   const [companionships, setCompanionships] = useState<Companionship[]>([]);
@@ -43,10 +43,12 @@ function App() {
     name: string;
     type: "minister" | "member";
   } | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeDragItem, setActiveDragItem] = useState<
     Minister | Member | null
   >(null);
+  const [ministerSearch, setMinisterSearch] = useState("");
+  const [companionshipSearch, setCompanionshipSearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
 
   const getContainerId = (id: string): string | null => {
     if (unassignedMinisters.some((m) => m.id === id)) {
@@ -293,24 +295,7 @@ function App() {
     }
 
     // Show warnings for duplicates
-    const duplicateWarnings: string[] = [];
-    if (duplicateMinisters.length > 0) {
-      duplicateWarnings.push(
-        `The following names were not added as ministers because they already exist: ${duplicateMinisters.join(
-          ", "
-        )}`
-      );
-    }
-    if (duplicateMembers.length > 0) {
-      duplicateWarnings.push(
-        `The following names were not added as members because they already exist: ${duplicateMembers.join(
-          ", "
-        )}`
-      );
-    }
-    if (duplicateWarnings.length > 0) {
-      alert(duplicateWarnings.join("\n"));
-    }
+    showDuplicateWarnings(duplicateMinisters, duplicateMembers);
 
     setBulkInput(""); // Clear the input
     setShowBulkAddForm(false); // Hide the form
@@ -393,8 +378,12 @@ function App() {
     setEditingPerson(null); // Close the form
   };
 
-  const matchesSearch = (name: string) =>
-    name.toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesMinisterSearch = (name: string) =>
+    name.toLowerCase().includes(ministerSearch.toLowerCase());
+  const matchesCompanionshipSearch = (name: string) =>
+    name.toLowerCase().includes(companionshipSearch.toLowerCase());
+  const matchesMemberSearch = (name: string) =>
+    name.toLowerCase().includes(memberSearch.toLowerCase());
 
   const handleExportToCSV = () => {
     const rows: string[][] = [];
@@ -414,14 +403,13 @@ function App() {
 
     // Add header for companionships
     rows.push([]);
-    rows.push(["Member", "Ministers"]);
+    rows.push(["Ministers", "Members"]);
     companionships.forEach((companionship) => {
-      companionship.members?.forEach((member) => {
-        const ministers = companionship.ministers
-          .map((minister) => minister.name)
-          .join(", ");
-        rows.push([member.name, ministers]);
-      });
+      const ministers = companionship.ministers.map((m) => m.name).join("; ");
+      const members = (companionship.members ?? [])
+        .map((m) => m.name)
+        .join("; ");
+      rows.push([ministers, members]);
     });
 
     // Convert rows to CSV format
@@ -470,6 +458,8 @@ function App() {
       const newUnassignedMinisters: Minister[] = [];
       const newUnassignedMembers: Member[] = [];
       const newCompanionships: Companionship[] = [];
+      const duplicateMinisters: string[] = [];
+      const duplicateMembers: string[] = [];
 
       let currentSection:
         | "unassigned-ministers"
@@ -512,7 +502,7 @@ function App() {
         } else if (rowHeader === "unassigned members") {
           currentSection = "unassigned-members";
           return;
-        } else if (rowHeader === "member,ministers") {
+        } else if (rowHeader === "ministers,members") {
           currentSection = "companionships";
           return;
         }
@@ -520,63 +510,64 @@ function App() {
         // Handle row based on current section
         if (currentSection === "unassigned-ministers") {
           const ministerName = row[0];
+          console.log("Processing minister:", ministerName);
           if (ministerName && !existingMinisters.has(ministerName)) {
             const minister = { id: `min-${uuidv4()}`, name: ministerName };
             newUnassignedMinisters.push(minister);
             existingMinisters.set(ministerName, minister);
+          } else if (ministerName) {
+            duplicateMinisters.push(ministerName);
           }
         } else if (currentSection === "unassigned-members") {
           const memberName = row[0];
+          console.log("Processing member:", memberName);
           if (memberName && !existingMembers.has(memberName)) {
             const member = { id: `mem-${uuidv4()}`, name: memberName };
             newUnassignedMembers.push(member);
             existingMembers.set(memberName, member);
+          } else if (memberName) {
+            duplicateMembers.push(memberName);
           }
         } else if (currentSection === "companionships") {
-          const memberName = row[0];
-          const ministerNames = row
-            .slice(1)
+          console.log("Processing companionship row:", row);
+          const ministerNames = row[0]
+            .split(";")
             .map((name) => name.trim())
             .filter(Boolean);
+          const memberNames = row[1]
+            ? row[1]
+                .split(";")
+                .map((name) => name.trim())
+                .filter(Boolean)
+            : [];
 
-          if (memberName) {
-            let member = existingMembers.get(memberName);
+          // Create or get Minister objects
+          const ministers = ministerNames.map((name) => {
+            let minister = existingMinisters.get(name);
+            if (!minister) {
+              minister = { id: `min-${uuidv4()}`, name };
+              existingMinisters.set(name, minister);
+            }
+            return minister;
+          });
+
+          // Create or get Member objects
+          const members = memberNames.map((name) => {
+            let member = existingMembers.get(name);
             if (!member) {
-              member = { id: `mem-${uuidv4()}`, name: memberName };
-              existingMembers.set(memberName, member);
+              member = { id: `mem-${uuidv4()}`, name };
+              existingMembers.set(name, member);
             }
+            return member;
+          });
 
-            const ministers = ministerNames.map((name) => {
-              let minister = existingMinisters.get(name);
-              if (!minister) {
-                minister = { id: `min-${uuidv4()}`, name };
-                existingMinisters.set(name, minister);
-              }
-              return minister;
+          // Only add if there is at least one minister or member
+          if (ministers.length > 0 || members.length > 0) {
+            newCompanionships.push({
+              id: `comp-${uuidv4()}`,
+              ministers,
+              members,
             });
-
-            // Try to find an existing companionship with the same ministers
-            let companionship = newCompanionships.find((c) => {
-              const existingNames = c.ministers.map((m) => m.name).sort();
-              const newNames = ministers.map((m) => m.name).sort();
-              return (
-                existingNames.length === newNames.length &&
-                existingNames.every((name, idx) => name === newNames[idx])
-              );
-            });
-
-            if (companionship) {
-              companionship.members = [
-                ...(companionship.members || []),
-                member,
-              ];
-            } else {
-              newCompanionships.push({
-                id: `comp-${uuidv4()}`,
-                ministers,
-                members: [member],
-              });
-            }
           }
         }
       });
@@ -593,10 +584,35 @@ function App() {
           a.name.localeCompare(b.name)
         )
       );
+      showDuplicateWarnings(duplicateMinisters, duplicateMembers);
     };
 
     reader.readAsText(file);
   };
+
+  function showDuplicateWarnings(
+    duplicateMinisters: string[],
+    duplicateMembers: string[]
+  ) {
+    const duplicateWarnings: string[] = [];
+    if (duplicateMinisters.length > 0) {
+      duplicateWarnings.push(
+        `The following names were not added as ministers because they already exist: ${duplicateMinisters.join(
+          ", "
+        )}`
+      );
+    }
+    if (duplicateMembers.length > 0) {
+      duplicateWarnings.push(
+        `The following names were not added as members because they already exist: ${duplicateMembers.join(
+          ", "
+        )}`
+      );
+    }
+    if (duplicateWarnings.length > 0) {
+      alert(duplicateWarnings.join("\n"));
+    }
+  }
 
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
@@ -627,15 +643,6 @@ function App() {
             <button onClick={() => setShowBulkAddForm(true)}>
               Add Multiple People
             </button>
-          </div>
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search all names..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
           </div>
         </div>
         {showBulkAddForm && (
@@ -695,12 +702,21 @@ function App() {
           {/* ------------ Unassigned Ministers ------------ */}
           <div className="main-column" id="unassigned-ministers-column">
             <h2 className="column-title">Ministers</h2>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search ministers..."
+                value={ministerSearch}
+                onChange={(e) => setMinisterSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
             <DropZone id="unassigned-ministers" label="Drop Ministers Here">
               {unassignedMinisters.length === 0 ? (
                 <p className="na-text">No Unassigned Ministers</p>
               ) : (
                 unassignedMinisters
-                  .filter((m) => matchesSearch(m.name))
+                  .filter((m) => matchesMinisterSearch(m.name))
                   .map((m) => {
                     // Find a member with the same name as the minister
                     const matchingMember =
@@ -767,14 +783,29 @@ function App() {
           {/* ------------ Companionships Column ------------ */}
           <div className="main-column" id="comp-column">
             <h2 className="column-title">Companionships</h2>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search companionships..."
+                value={companionshipSearch}
+                onChange={(e) => setCompanionshipSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
             <div className="comps-container">
+              {/* Zone to create new companionships */}
+              <DropZone
+                id="new-companionship"
+                label="Drop minister here to start a new companionship"
+              />
+
               {/* Existing companionships */}
               {companionships.map((c) => {
                 const filteredMinisters = c.ministers.filter((m) =>
-                  matchesSearch(m.name)
+                  matchesCompanionshipSearch(m.name)
                 );
                 const filteredMembers = (c.members ?? []).filter((m) =>
-                  matchesSearch(m.name)
+                  matchesCompanionshipSearch(m.name)
                 );
 
                 if (
@@ -840,12 +871,6 @@ function App() {
                   </div>
                 );
               })}
-
-              {/* Zone to create new companionships */}
-              <DropZone
-                id="new-companionship"
-                label="Drop minister here to start a new companionship"
-              />
             </div>
             <button onClick={handleExportToCSV}>Export to CSV</button>
           </div>
@@ -853,12 +878,21 @@ function App() {
           {/* ------------ Unassigned Members ------------ */}
           <div className="main-column" id="unassigned-members-column">
             <h2 className="column-title">Members</h2>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search members..."
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
             <DropZone id="unassigned-members" label="Drop Members Here">
               {unassignedMembers.length === 0 ? (
                 <p className="na-text">No Unassigned Members</p>
               ) : (
                 unassignedMembers
-                  .filter((m) => matchesSearch(m.name))
+                  .filter((m) => matchesMemberSearch(m.name))
                   .map((m) => (
                     <MemberCard
                       key={m.id}
