@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -23,14 +23,31 @@ import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 // Import Tutorial
 // Priority Tag to certain Members (Binary)
 
+function getInitial<T>(key: string, fallback: T): T {
+  const data = localStorage.getItem(key);
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 function App() {
+  const [companionships, setCompanionships] = useState<Companionship[]>(() =>
+    getInitial("companionships", [])
+  );
+  const [unassignedMinisters, setUnassignedMinisters] = useState<Minister[]>(
+    () => getInitial("unassignedMinisters", allMinisters)
+  );
+  const [unassignedMembers, setUnassignedMembers] = useState<Member[]>(() =>
+    getInitial("unassignedMembers", members)
+  );
   // State management
-  const [companionships, setCompanionships] = useState<Companionship[]>([]);
   const [newMinister, setNewMinister] = useState({ name: "" });
   const [newMember, setNewMember] = useState({ name: "" });
-  const [unassignedMinisters, setUnassignedMinisters] =
-    useState<Minister[]>(allMinisters);
-  const [unassignedMembers, setUnassignedMembers] = useState<Member[]>(members);
   const [showAddMinisterForm, setShowAddMinisterForm] = useState(false);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [bulkInput, setBulkInput] = useState(""); // For bulk input
@@ -650,6 +667,23 @@ function App() {
     }
   }
 
+  // Save to localStorage on Change
+  useEffect(() => {
+    localStorage.setItem("companionships", JSON.stringify(companionships));
+  }, [companionships]);
+  useEffect(() => {
+    localStorage.setItem(
+      "unassignedMinisters",
+      JSON.stringify(unassignedMinisters)
+    );
+  }, [unassignedMinisters]);
+  useEffect(() => {
+    localStorage.setItem(
+      "unassignedMembers",
+      JSON.stringify(unassignedMembers)
+    );
+  }, [unassignedMembers]);
+
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
       <DragOverlay>
@@ -684,6 +718,25 @@ function App() {
             />
             <button onClick={() => setShowBulkAddForm(true)}>
               Add Multiple People
+            </button>
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to delete all data? This action cannot be undone."
+                  )
+                ) {
+                  setCompanionships([]);
+                  setUnassignedMinisters([]);
+                  setUnassignedMembers([]);
+                  localStorage.removeItem("companionships");
+                  localStorage.removeItem("unassignedMinisters");
+                  localStorage.removeItem("unassignedMembers");
+                }
+              }}
+              style={{ background: "#f56565" }}
+            >
+              Delete All
             </button>
           </div>
         </div>
