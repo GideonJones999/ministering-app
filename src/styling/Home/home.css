@@ -33,6 +33,14 @@
 .app-container .app-header .header-buttons button:hover {
   background-color: #0056b3;
 }
+.app-container .app-header .header-buttons span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: "1rem";
+  margin-left: "1.5rem";
+  font-weight: 400;
+}
 .app-container .app-header .search-container input {
   padding: 0.5rem;
   border: 1px solid #ccc;

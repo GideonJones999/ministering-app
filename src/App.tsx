@@ -22,9 +22,10 @@ import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 // Add Districts Dropdown
 // Import Tutorial
 // Priority Tag to certain Members (Binary)
-// Add an "Expected Members per Minister" count to header
+// Add an "Expected Members per Companionship" count to header
 
 function App() {
+  // State management
   const [companionships, setCompanionships] = useState<Companionship[]>([]);
   const [newMinister, setNewMinister] = useState({ name: "" });
   const [newMember, setNewMember] = useState({ name: "" });
@@ -50,6 +51,16 @@ function App() {
   const [companionshipSearch, setCompanionshipSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
 
+  const totalMembers =
+    unassignedMembers.length +
+    companionships.reduce((sum, c) => sum + (c.members?.length || 0), 0);
+
+  const expectedMembersPerCompanionship =
+    companionships.length > 0
+      ? (totalMembers / companionships.length).toFixed(2)
+      : "N/A";
+
+  // Functions
   const getContainerId = (id: string): string | null => {
     if (unassignedMinisters.some((m) => m.id === id)) {
       return "unassigned-ministers";
@@ -628,6 +639,12 @@ function App() {
         <div className="app-header">
           <h1 className="app-title">Ministering App</h1>
           <div className="header-buttons">
+            <span>
+              Expected Members per Companionship:{" "}
+              <b style={{ paddingLeft: ".25em" }}>
+                {expectedMembersPerCompanionship}
+              </b>
+            </span>
             <button
               onClick={() => document.getElementById("file-input")?.click()}
             >
