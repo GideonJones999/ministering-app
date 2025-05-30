@@ -36,8 +36,8 @@ export default function MemberCard({
       <div {...attributes} {...listeners} className="drag-handle">
         <h4 className="member-name">{member.name}</h4>
       </div>
-      <div>
-        <label style={{ fontSize: "0.9em" }}>
+      <div className="priority-container">
+        <label className="priority-label">
           <input
             type="checkbox"
             checked={!!member.priority}

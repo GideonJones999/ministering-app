@@ -26,6 +26,14 @@
   margin-top: 0.5rem;
   margin-bottom: 0;
 }
+.member-card .priority-container,
+.minister-card .priority-container {
+  margin-bottom: 0.25em;
+}
+.member-card .priority-container .priority-label,
+.minister-card .priority-container .priority-label {
+  font-size: 0.9em;
+}
 .member-card.member-card,
 .minister-card.member-card {
   background-color: #ebf8ff;

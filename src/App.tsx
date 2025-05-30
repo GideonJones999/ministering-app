@@ -806,7 +806,7 @@ Continue with import?`
               Delete All
             </button>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
+          <div className="district-manager">
             <label>
               Number of Districts:{" "}
               <input
@@ -833,14 +833,13 @@ Continue with import?`
                     return updated;
                   });
                 }}
-                style={{ width: 50 }}
               />
             </label>
             {Array.from({ length: districtCount }, (_, i) => {
               const key = `District ${i + 1}`;
               return (
                 <span key={key} style={{ marginLeft: 8 }}>
-                  <label>
+                  <label className="district-label">
                     {key} Color:{" "}
                     <input
                       type="color"

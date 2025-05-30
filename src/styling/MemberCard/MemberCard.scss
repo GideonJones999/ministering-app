@@ -18,9 +18,14 @@
     }
     .assigned-ministers {
       font-size: 0.75rem; // Equivalent to Tailwind's text-sm
-      // color: #b5d8a8;
       margin-top: 0.5rem;
       margin-bottom: 0;
+    }
+  }
+  .priority-container {
+    margin-bottom: 0.25em;
+    .priority-label {
+      font-size: 0.9em;
     }
   }
 

@@ -43,6 +43,35 @@
         font-weight: 400;
       }
     }
+    .district-manager {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        flex-direction: row;
+        input {
+          border-radius: 0.5em;
+          text-align: center;
+          border: 1px solid #ccc;
+          width: 2.5em;
+          height: 1.5em;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 0.5em;
+          &[type="number"] {
+            padding-left: 1em;
+          }
+          &[type="color"] {
+            height: 2em;
+          }
+        }
+      }
+    }
   }
   #edit-form {
     width: 10em;
@@ -109,6 +138,9 @@
         overflow: hidden; // allow inner scroll but prevent outer
         display: flex;
         flex-direction: column;
+        .search-container {
+          margin-bottom: 1rem;
+        }
         .comps-container {
           display: flex;
           flex-direction: column;
@@ -118,6 +150,20 @@
           overflow-y: auto; // enable internal scrolling
           overflow-x: hidden;
           width: 100%;
+          div.comp-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            div.comp-district {
+              select {
+                border-radius: 0.5em;
+                text-align: center;
+                border: 1px solid #ccc;
+                padding: 0.4em;
+              }
+            }
+          }
         }
       }
       .search-container {
@@ -162,11 +208,4 @@ button {
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none; /* Ensure it doesn't block interactions */
-}
-
-div.comp-card {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-evenly;
 }
