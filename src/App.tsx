@@ -737,7 +737,34 @@ function App() {
               </b>
             </span>
             <button
-              onClick={() => document.getElementById("file-input")?.click()}
+              onClick={() => {
+                const proceed = window.confirm(
+                  `CSV Import Format:\n
+- Unassigned Ministers section: 
+    Unassigned Ministers
+    Minister Name 1
+    Minister Name 2
+
+- Unassigned Members section: 
+    Unassigned Members
+    Member Name 1,1
+    Member Name 2,0
+  (Second column is 1 for priority, 0 for not)
+
+- Companionships section: 
+    Ministers,Members,Member Priorities,District
+    Minister 1; Minister 2,Member 1; Member 2,1;0,District 1
+
+- Use a blank line to separate sections.
+- Use ';' to separate multiple names in a cell.
+- District must be 'District 1', 'District 2', etc.
+
+Continue with import?`
+                );
+                if (proceed) {
+                  document.getElementById("file-input")?.click();
+                }
+              }}
             >
               Import CSV
             </button>
