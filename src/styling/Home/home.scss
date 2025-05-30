@@ -31,9 +31,9 @@
         background-color: #007bff;
         color: #fff;
         cursor: pointer;
-        transition: 0.5s ease-in-out;
+        transition: 0.25s ease-in-out;
         &:hover {
-          transition: 0.5s ease-in-out;
+          transition: 0.25s ease-in-out;
           background-color: #0056b3;
         }
         img.github-logo {
@@ -163,6 +163,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-evenly;
+            transition: background-color 0.25s ease-in-out;
             div.comp-district {
               select {
                 border-radius: 0.5em;
