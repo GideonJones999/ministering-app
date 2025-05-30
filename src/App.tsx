@@ -19,7 +19,6 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
-// Add Districts Dropdown
 // Import Tutorial
 
 function getInitial<T>(key: string, fallback: T): T {
