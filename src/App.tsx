@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
-// Import Tutorial
+// Make it work on mobile
 
 function getInitial<T>(key: string, fallback: T): T {
   const data = localStorage.getItem(key);
