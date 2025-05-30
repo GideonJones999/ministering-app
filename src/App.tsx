@@ -817,7 +817,7 @@ Continue with import?`
               <img
                 className="github-logo"
                 alt="github_logo"
-                src="/github-mark-white.png"
+                src="github-mark-white.png"
               />
             </button>
           </div>
