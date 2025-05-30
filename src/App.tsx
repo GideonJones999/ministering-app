@@ -15,6 +15,7 @@ import {
 import MinisterCard from "./components/MinisterCard";
 import MemberCard from "./components/MemberCard";
 import DropZone from "./components/DropZone";
+import CompanionshipCard from "./components/CompanionshipCard";
 import { v4 as uuidv4 } from "uuid";
 import "./styling/Home/Home.scss"; // Import your CSS file
 import "./styling/CompCard/CompCard.scss"; // Import your CSS file
@@ -816,7 +817,7 @@ Continue with import?`
               <img
                 className="github-logo"
                 alt="github_logo"
-                src="public\github-mark-white.png"
+                src="/github-mark-white.png"
               />
             </button>
           </div>
@@ -1024,114 +1025,23 @@ Continue with import?`
                 id="new-companionship"
                 label="Drop minister here to start a new companionship"
               />
-
               {/* Existing companionships */}
-              {companionships.map((c) => {
-                const filteredMinisters = c.ministers.filter((m) =>
-                  matchesCompanionshipSearch(m.name)
-                );
-                const filteredMembers = (c.members ?? []).filter((m) =>
-                  matchesCompanionshipSearch(m.name)
-                );
-
-                if (
-                  filteredMinisters.length === 0 &&
-                  filteredMembers.length === 0
-                )
-                  return null;
-                return (
-                  <div
-                    key={c.id}
-                    className="comp-card"
-                    style={{
-                      backgroundColor: c.district
-                        ? districtColors[c.district]
-                        : undefined,
-                    }}
-                  >
-                    <div className="comp-district">
-                      <select
-                        value={c.district || ""}
-                        onChange={(e) =>
-                          setCompanionships((prev) =>
-                            prev.map((comp) =>
-                              comp.id === c.id
-                                ? { ...comp, district: e.target.value }
-                                : comp
-                            )
-                          )
-                        }
-                      >
-                        <option value="">Select District</option>
-                        {Array.from({ length: districtCount }, (_, i) => {
-                          const key = `District ${i + 1}`;
-                          return (
-                            <option key={key} value={key}>
-                              {key}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                    <div className="person-cards">
-                      <div className="ministers-group">
-                        {c.ministers.map((m) => {
-                          const matchingMember =
-                            unassignedMembers.find(
-                              (member) => member.name === m.name
-                            ) ||
-                            companionships
-                              .flatMap((c) => c.members || [])
-                              .find((member) => member.name === m.name);
-
-                          const matchingMemberMinisters = matchingMember
-                            ? companionships
-                                .filter((c) =>
-                                  c.members?.some(
-                                    (member) => member.id === matchingMember.id
-                                  )
-                                )
-                                .flatMap((c) => c.ministers)
-                            : [];
-
-                          return (
-                            <MinisterCard
-                              key={m.id}
-                              minister={m}
-                              onRemove={handleRemoveMinister}
-                              setEditingPerson={setEditingPerson}
-                              matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
-                            />
-                          );
-                        })}
-                        {c.ministers.length < 3 && (
-                          <DropZone
-                            id={`companionship-${c.id}`}
-                            label="Drop minister here"
-                            small={true}
-                          />
-                        )}
-                      </div>
-                      <div className="members-group">
-                        {c.members?.map((m) => (
-                          <MemberCard
-                            key={m.id}
-                            member={m}
-                            onRemove={handleRemoveMember}
-                            setEditingPerson={setEditingPerson}
-                            onTogglePriority={handleTogglePriority}
-                          />
-                        ))}
-                        <DropZone
-                          id={`companionship-${c.id}-members`}
-                          label="Drop member here"
-                          small={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {companionships.map((c) => (
+                <CompanionshipCard
+                  key={c.id}
+                  companionship={c}
+                  districtColors={districtColors}
+                  districtCount={districtCount}
+                  setCompanionships={setCompanionships}
+                  companionships={companionships}
+                  unassignedMembers={unassignedMembers}
+                  handleRemoveMinister={handleRemoveMinister}
+                  handleRemoveMember={handleRemoveMember}
+                  setEditingPerson={setEditingPerson}
+                  handleTogglePriority={handleTogglePriority}
+                  matchesCompanionshipSearch={matchesCompanionshipSearch}
+                />
+              ))}
             </div>
             <button onClick={handleExportToCSV}>Export to CSV</button>
           </div>
