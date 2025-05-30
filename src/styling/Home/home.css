@@ -5,6 +5,18 @@
   background-color: #f7fafc;
   padding: 2.51rem;
 }
+@media (max-width: 850px) {
+  .app-container {
+    width: 100vw;
+    min-height: 100vh;
+    height: auto;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0;
+  }
+}
 .app-container .app-header {
   display: flex;
   flex-direction: row;
@@ -13,6 +25,13 @@
   width: 100%;
   align-items: center;
   height: 10rem;
+}
+@media (max-width: 850px) {
+  .app-container .app-header {
+    height: auto;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 .app-container .app-header .app-title {
   font-size: 1.5rem;
@@ -54,7 +73,14 @@
 .app-container .app-header .district-manager {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1em;
+  justify-content: center;
+}
+@media (max-width: 850px) {
+  .app-container .app-header .district-manager {
+    margin-top: 1em;
+  }
 }
 .app-container .app-header .district-manager label {
   display: flex;
@@ -130,6 +156,21 @@
   height: calc(100vh - 16rem);
   overflow: hidden;
 }
+@media (max-width: 850px) {
+  .app-container .main-grid {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .app-container .main-grid .main-column {
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100vw;
+    margin-bottom: 2rem;
+    height: auto;
+    overflow: visible;
+  }
+}
 .app-container .main-grid .main-column {
   width: 30em;
   display: flex;
@@ -158,6 +199,12 @@
   overflow-x: hidden;
   width: 100%;
 }
+@media (max-width: 850px) {
+  .app-container .main-grid .main-column#comp-column .comps-container {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
 .app-container .main-grid .main-column#comp-column .comps-container div.comp-card {
   display: flex;
   flex-direction: column;
@@ -178,6 +225,20 @@
   border-radius: 4px;
   height: 1em;
   width: 25em;
+}
+@media (max-width: 850px) {
+  .app-container .main-grid {
+    flex-direction: column;
+    height: auto;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  .app-container .main-grid .main-column {
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100vw;
+    margin-bottom: 2rem;
+  }
 }
 
 button {
