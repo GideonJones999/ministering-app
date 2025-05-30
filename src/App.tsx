@@ -805,6 +805,20 @@ Continue with import?`
             >
               Delete All
             </button>
+            <button
+              onClick={() => {
+                window.open(
+                  "https://github.com/GideonJones999/ministering-app/",
+                  "_blank"
+                );
+              }}
+            >
+              <img
+                className="github-logo"
+                alt="github_logo"
+                src="public\github-mark-white.png"
+              />
+            </button>
           </div>
           <div className="district-manager">
             <label>
