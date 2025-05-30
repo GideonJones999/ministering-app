@@ -776,6 +776,13 @@ Continue with import?`
               style={{ display: "none" }}
               onChange={handleImportCSV}
             />
+            <button
+              onClick={() => {
+                window.open("Ministering-CSV-Template.xlsx", "_blank");
+              }}
+            >
+              Download CSV Template
+            </button>
             <button onClick={() => setShowBulkAddForm(true)}>
               Add Multiple People
             </button>
