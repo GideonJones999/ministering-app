@@ -8,8 +8,9 @@
 .app-container .app-header {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  width: 60vw;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+  width: 100%;
   align-items: center;
   height: 10rem;
 }
@@ -21,6 +22,7 @@
 .app-container .app-header .header-buttons {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 .app-container .app-header .header-buttons button {
   padding: 0.5rem 1rem;
@@ -40,13 +42,6 @@
   font-size: "1rem";
   margin-left: "1.5rem";
   font-weight: 400;
-}
-.app-container .app-header .search-container input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  height: 1em;
-  width: 25em;
 }
 .app-container #edit-form {
   width: 10em;
@@ -121,6 +116,13 @@
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
+}
+.app-container .main-grid .main-column .search-container input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 1em;
+  width: 25em;
 }
 
 button {

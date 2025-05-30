@@ -21,7 +21,6 @@ import "./styling/CompCard/CompCard.scss"; // Import your CSS file
 
 // Add Districts Dropdown
 // Import Tutorial
-// Priority Tag to certain Members (Binary)
 
 function getInitial<T>(key: string, fallback: T): T {
   const data = localStorage.getItem(key);
@@ -430,7 +429,7 @@ function App() {
 
     // Add header for companionships
     rows.push([]);
-    rows.push(["Ministers", "Members"]);
+    rows.push(["Ministers", "Members", "Member Priorities", "District"]);
     companionships.forEach((companionship) => {
       const ministers = companionship.ministers.map((m) => m.name).join("; ");
       const members = (companionship.members ?? [])
@@ -439,7 +438,8 @@ function App() {
       const priorities = (companionship.members ?? [])
         .map((m) => (m.priority ? "1" : "0"))
         .join("; ");
-      rows.push([ministers, members, priorities]);
+      const district = companionship.district || "";
+      rows.push([ministers, members, priorities, district]);
     });
 
     // Convert rows to CSV format
@@ -501,6 +501,8 @@ function App() {
       const existingMinisters = new Map<string, Minister>();
       const existingMembers = new Map<string, Member>();
 
+      let maxDistrictNum = districtCount; // Start with current value
+
       // Populate maps with existing unassigned ministers and members
       unassignedMinisters.forEach((minister) => {
         existingMinisters.set(minister.name, minister);
@@ -532,7 +534,9 @@ function App() {
         } else if (rowHeader === "unassigned members") {
           currentSection = "unassigned-members";
           return;
-        } else if (rowHeader === "ministers,members") {
+        } else if (
+          rowHeader === "ministers,members,member priorities,district"
+        ) {
           currentSection = "companionships";
           return;
         }
@@ -578,6 +582,12 @@ function App() {
           const priorities = row[2]
             ? row[2].split(";").map((val) => val.trim() === "1")
             : []; // Create or get Minister objects
+          const district = row[3] || ""; // Get district if available
+          const match = district.match(/^District (\d+)$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxDistrictNum) maxDistrictNum = num;
+          }
           const ministers = ministerNames.map((name) => {
             let minister = existingMinisters.get(name);
             if (!minister) {
@@ -606,6 +616,7 @@ function App() {
               id: `comp-${uuidv4()}`,
               ministers,
               members,
+              district,
             });
           }
         }
@@ -623,6 +634,7 @@ function App() {
           a.name.localeCompare(b.name)
         )
       );
+      setDistrictCount(maxDistrictNum);
       showDuplicateWarnings(duplicateMinisters, duplicateMembers);
     };
 
@@ -684,6 +696,27 @@ function App() {
     );
   }, [unassignedMembers]);
 
+  const [districtCount, setDistrictCount] = useState(3);
+  const [districtColors, setDistrictColors] = useState<Record<string, string>>({
+    "District 1": "#e3fcec",
+    "District 2": "#e0e7ff",
+    "District 3": "#fff5e6",
+  });
+
+  useEffect(() => {
+    localStorage.setItem("districtCount", districtCount.toString());
+    localStorage.setItem("districtColors", JSON.stringify(districtColors));
+  }, [districtCount, districtColors]);
+
+  useEffect(() => {
+    const savedCount = parseInt(localStorage.getItem("districtCount") || "3");
+    const savedColors = JSON.parse(
+      localStorage.getItem("districtColors") || "{}"
+    );
+    setDistrictCount(savedCount);
+    setDistrictColors((prev) => ({ ...prev, ...savedColors }));
+  }, []);
+
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
       <DragOverlay>
@@ -729,15 +762,74 @@ function App() {
                   setCompanionships([]);
                   setUnassignedMinisters([]);
                   setUnassignedMembers([]);
+                  setDistrictCount(3);
+                  setDistrictColors({
+                    "District 1": "#e3fcec",
+                    "District 2": "#e0e7ff",
+                    "District 3": "#fff5e6",
+                  });
                   localStorage.removeItem("companionships");
                   localStorage.removeItem("unassignedMinisters");
                   localStorage.removeItem("unassignedMembers");
+                  localStorage.removeItem("districtCount");
+                  localStorage.removeItem("districtColors");
                 }
               }}
               style={{ background: "#f56565" }}
             >
               Delete All
             </button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
+            <label>
+              Number of Districts:{" "}
+              <input
+                type="number"
+                min={1}
+                value={districtCount}
+                onChange={(e) => {
+                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  setDistrictCount(val);
+                  setDistrictColors((prev) => {
+                    const updated = { ...prev };
+                    // Add new districts if needed
+                    for (let i = 1; i <= val; i++) {
+                      const key = `District ${i}`;
+                      if (!updated[key]) {
+                        updated[key] = "#ffffff";
+                      }
+                    }
+                    // Remove extra districts
+                    Object.keys(updated).forEach((key) => {
+                      const num = parseInt(key.replace("District ", ""));
+                      if (num > val) delete updated[key];
+                    });
+                    return updated;
+                  });
+                }}
+                style={{ width: 50 }}
+              />
+            </label>
+            {Array.from({ length: districtCount }, (_, i) => {
+              const key = `District ${i + 1}`;
+              return (
+                <span key={key} style={{ marginLeft: 8 }}>
+                  <label>
+                    {key} Color:{" "}
+                    <input
+                      type="color"
+                      value={districtColors[key]}
+                      onChange={(e) =>
+                        setDistrictColors((prev) => ({
+                          ...prev,
+                          [key]: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </span>
+              );
+            })}
           </div>
         </div>
         {showBulkAddForm && (
@@ -909,60 +1001,94 @@ function App() {
                 )
                   return null;
                 return (
-                  <div key={c.id} className="comp-card">
-                    <div className="ministers-group">
-                      {c.ministers.map((m) => {
-                        const matchingMember =
-                          unassignedMembers.find(
-                            (member) => member.name === m.name
-                          ) ||
-                          companionships
-                            .flatMap((c) => c.members || [])
-                            .find((member) => member.name === m.name);
+                  <div
+                    key={c.id}
+                    className="comp-card"
+                    style={{
+                      backgroundColor: c.district
+                        ? districtColors[c.district]
+                        : undefined,
+                    }}
+                  >
+                    <div className="comp-district">
+                      <select
+                        value={c.district || ""}
+                        onChange={(e) =>
+                          setCompanionships((prev) =>
+                            prev.map((comp) =>
+                              comp.id === c.id
+                                ? { ...comp, district: e.target.value }
+                                : comp
+                            )
+                          )
+                        }
+                      >
+                        <option value="">Select District</option>
+                        {Array.from({ length: districtCount }, (_, i) => {
+                          const key = `District ${i + 1}`;
+                          return (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="person-cards">
+                      <div className="ministers-group">
+                        {c.ministers.map((m) => {
+                          const matchingMember =
+                            unassignedMembers.find(
+                              (member) => member.name === m.name
+                            ) ||
+                            companionships
+                              .flatMap((c) => c.members || [])
+                              .find((member) => member.name === m.name);
 
-                        const matchingMemberMinisters = matchingMember
-                          ? companionships
-                              .filter((c) =>
-                                c.members?.some(
-                                  (member) => member.id === matchingMember.id
+                          const matchingMemberMinisters = matchingMember
+                            ? companionships
+                                .filter((c) =>
+                                  c.members?.some(
+                                    (member) => member.id === matchingMember.id
+                                  )
                                 )
-                              )
-                              .flatMap((c) => c.ministers)
-                          : [];
+                                .flatMap((c) => c.ministers)
+                            : [];
 
-                        return (
-                          <MinisterCard
-                            key={m.id}
-                            minister={m}
-                            onRemove={handleRemoveMinister}
-                            setEditingPerson={setEditingPerson}
-                            matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                          return (
+                            <MinisterCard
+                              key={m.id}
+                              minister={m}
+                              onRemove={handleRemoveMinister}
+                              setEditingPerson={setEditingPerson}
+                              matchingMemberMinisters={matchingMemberMinisters} // Pass assigned ministers
+                            />
+                          );
+                        })}
+                        {c.ministers.length < 3 && (
+                          <DropZone
+                            id={`companionship-${c.id}`}
+                            label="Drop minister here"
+                            small={true}
                           />
-                        );
-                      })}
-                      {c.ministers.length < 3 && (
+                        )}
+                      </div>
+                      <div className="members-group">
+                        {c.members?.map((m) => (
+                          <MemberCard
+                            key={m.id}
+                            member={m}
+                            onRemove={handleRemoveMember}
+                            setEditingPerson={setEditingPerson}
+                            onTogglePriority={handleTogglePriority}
+                          />
+                        ))}
                         <DropZone
-                          id={`companionship-${c.id}`}
-                          label="Drop minister here"
+                          id={`companionship-${c.id}-members`}
+                          label="Drop member here"
                           small={true}
                         />
-                      )}
-                    </div>
-                    <div className="members-group">
-                      {c.members?.map((m) => (
-                        <MemberCard
-                          key={m.id}
-                          member={m}
-                          onRemove={handleRemoveMember}
-                          setEditingPerson={setEditingPerson}
-                          onTogglePriority={handleTogglePriority}
-                        />
-                      ))}
-                      <DropZone
-                        id={`companionship-${c.id}-members`}
-                        label="Drop member here"
-                        small={true}
-                      />
+                      </div>
                     </div>
                   </div>
                 );

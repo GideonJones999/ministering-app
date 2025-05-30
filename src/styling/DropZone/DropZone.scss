@@ -1,6 +1,6 @@
 .drop-zone {
   min-height: 2rem;
-  width: 100%;
+  width: 92%;
   border: 2px dashed #ccc;
   border-radius: 8px;
   padding: 1rem;
@@ -10,7 +10,7 @@
   overflow-y: scroll;
   overflow-x: hidden;
   align-content: center;
-
+  margin: 1rem 0;
   &.is-over {
     background-color: #f0f0f0; // Highlight when dragging over
   }

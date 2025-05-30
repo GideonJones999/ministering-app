@@ -13,6 +13,7 @@ export type Companionship = {
   id: string;
   ministers: Minister[];
   members?: Member[];
+  district?: string;
 };
 
 export const ministers: Minister[] = [];

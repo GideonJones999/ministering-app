@@ -6,10 +6,10 @@ div.comp-card {
   background-color: #ebf8ff;
   text-align: center;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   width: 75%;
-  justify-content: space-evenly;
+  justify-content: center;
 }
 div.comp-card h4 {
   font-weight: 600;
@@ -18,14 +18,20 @@ div.comp-card p {
   font-size: 0.875rem;
   color: #718096;
 }
-div.comp-card div.members-group,
-div.comp-card div.ministers-group {
+div.comp-card div.person-cards {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+div.comp-card div.person-cards div.members-group,
+div.comp-card div.person-cards div.ministers-group {
+  margin: 0.5em;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
-div.comp-card div.members-group div.drag-handle,
-div.comp-card div.ministers-group div.drag-handle {
+div.comp-card div.person-cards div.members-group div.drag-handle,
+div.comp-card div.person-cards div.ministers-group div.drag-handle {
   padding: 0.5rem;
 }/*# sourceMappingURL=CompCard.css.map */
